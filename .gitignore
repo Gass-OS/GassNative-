@@ -1,0 +1,47 @@
+# Generated build output
+/build/
+
+# Local Debian root filesystem and installed environments
+/files/
+
+# Built APKs and signing outputs
+/*.apk
+/*.apk.idsig
+
+# Local signing keys and keystores
+/*.keystore
+/*.jks
+/*.p12
+
+# Backup and temporary copies at the project root
+/*.bak
+/*.bak*
+/*.before-*
+/backup-*/
+/backups/
+/__pycache__/
+/,
+*.pyc
+
+# Additional local backup variants
+/*.home-backup-*
+/*.icon-backup
+/*.fastfetch-working
+/*.pre-audio
+
+# Editor and experimental source backups anywhere in the project
+*.bak
+*.bak*
+*.before-*
+*.backup
+*.backup-*
+*.home-backup-*
+*.cursor-backup
+*.session-backup
+*.pre-audio
+*.pre-imefix
+*.pre-portability
+*.broken
+*.fastfetch-working
+
+*.bsdtar-backup

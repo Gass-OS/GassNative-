@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="GassNativeTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorAccent">#FF8A42</item>
+        <item name="android:colorControlActivated">#FF8A42</item>
+        <item name="android:colorControlHighlight">#33FF8A42</item>
+        <item name="android:windowBackground">#090D15</item>
+        <item name="android:statusBarColor">#090D15</item>
+        <item name="android:navigationBarColor">#090D15</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

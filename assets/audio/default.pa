@@ -1,0 +1,2 @@
+load-module module-sles-sink
+load-module module-native-protocol-tcp auth-anonymous=1 port=4714 listen=127.0.0.1
