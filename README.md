@@ -2,94 +2,63 @@
 
 Linux, unleashed.
 
-A Debian ARM64 desktop on Android — without requiring root access.
+A Debian ARM64 Linux desktop on Android.
 
-""Android" (https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)" (https://www.android.com/)
-""Debian" (https://img.shields.io/badge/Debian-13_Trixie-A81D33?style=for-the-badge&logo=debian&logoColor=white)" (https://www.debian.org/)
-""Linux" (https://img.shields.io/badge/Linux-ARM64-FCC624?style=for-the-badge&logo=linux&logoColor=black)" (https://www.kernel.org/)
-""PRoot" (https://img.shields.io/badge/PRoot-Rootless_Linux-3978FF?style=for-the-badge)" (https://proot-me.github.io/)
+"Download APK" (https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk) · "Releases" (https://github.com/Gass-OS/GassNative-/releases) · "Report a Bug" (https://github.com/Gass-OS/GassNative-/issues)
 
-"⬇ DOWNLOAD APK" (https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk) · "RELEASES" (https://github.com/Gass-OS/GassNative-/releases) · "REPORT A BUG" (https://github.com/Gass-OS/GassNative-/issues)
+"Android" (https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white)
+"Debian" (https://img.shields.io/badge/Debian-13_Trixie-A81D33?logo=debian&logoColor=white)
+"Architecture" (https://img.shields.io/badge/Architecture-ARM64-3978FF?logo=linux&logoColor=white)
 
 </div>---
 
-🔷 About GassNative
+About
 
-GassNative is an experimental Android application that brings a Debian ARM64 Linux environment and an XFCE desktop experience to compatible Android devices.
+GassNative is an experimental Android application that brings a Debian Linux environment and XFCE desktop to compatible Android devices.
 
-Built around a custom Android interface and PRoot, GassNative explores a portable Linux workspace without requiring root access to Android.
+It uses PRoot to run a Linux userspace without requiring root access to Android.
 
-Feature| Description
-🐧 Debian 13 Trixie| Debian ARM64 userspace and package ecosystem
-🖥️ XFCE Desktop| Lightweight graphical Linux desktop
-📱 Android Application| Manage your Linux environment from Android
-⚙️ Profiles & Settings| Configure DNS, bind mounts and environment variables
-🚀 Graphics Research| Ongoing work on display integration and hardware acceleration
+Features
 
-✨ Designed for Linux on the go
+- Debian 13 Trixie for ARM64 devices
+- XFCE graphical desktop
+- Android application for managing the environment
+- Configurable DNS, profiles, bind mounts and environment variables
+- Ongoing development of desktop integration and GPU acceleration
 
-<div align="center">🐧 Linux environment| 🖥️ Desktop experience
-Debian ARM64 userspace| XFCE desktop session
-PRoot-based execution| Integrated display research
+Installation
 
-📱 Android integration| ⚡ Graphics development
-Dedicated app interface| Experimental GPU acceleration
-Configuration and profiles| Mesa and display-stack exploration
+1. Download the "GassNative APK" (https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk).
+2. Install the APK on your compatible Android device.
+3. Open GassNative and follow the Debian installation instructions.
+4. After installation, launch the desktop from the app.
 
-</div>📥 Installation
+An internet connection and sufficient free storage are required for the initial setup.
 
-1. Download
+Technology
 
-Get the current APK from the project release:
-
-"Download GassNative Build 7 (.apk)" (https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk)
-
-2. Install
-
-Open the downloaded APK on your compatible Android device. If prompted, allow your browser or file manager to install apps.
-
-3. Set up Debian
-
-Launch GassNative and follow the installation flow. The initial Debian download requires an internet connection and sufficient free storage.
-
-4. Launch the desktop
-
-After setup, open the desktop through GassNative and explore your Linux environment.
-
-🧩 Technology
-
-- Android: Native Java application interface
-- Linux distribution: Debian 13 Trixie, ARM64
+- Distribution: Debian 13 Trixie
+- Architecture: ARM64
+- Desktop: XFCE
 - Linux userspace: PRoot
-- Desktop environment: XFCE
-- Build system: Custom Android SDK build scripts
+- Application: Native Android Java app
+- Build system: Android SDK and custom build scripts
 
-⚡ Hardware acceleration
+Graphics acceleration
 
-GPU acceleration and desktop rendering are active development areas.
+Hardware acceleration remains experimental. GPU support depends on the device, graphics drivers and application configuration. Some applications may use software rendering.
 
-The project explores integrating Android's display surface with the Linux desktop and investigating compatible Mesa graphics drivers. Hardware acceleration is experimental and not guaranteed; some applications or configurations may use software rendering.
+Project links
 
-🛠️ Project status
-
-GassNative is an evolving project. Installation reliability, desktop integration, input handling, device compatibility and graphics performance may vary between builds.
-
-Please check the release notes before installing or upgrading.
-
-🔗 Project links
-
-- "Download APK" (https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk)
-- "All releases" (https://github.com/Gass-OS/GassNative-/releases)
+- "Download the latest release" (https://github.com/Gass-OS/GassNative-/releases)
 - "Project website" (https://gass-os.github.io/GassNative-/)
 - "Source code" (https://github.com/Gass-OS/GassNative-)
-- "Issues and bug reports" (https://github.com/Gass-OS/GassNative-/issues)
+- "Report issues" (https://github.com/Gass-OS/GassNative-/issues)
 
-👨‍💻 Developer
+Developer
 
-Created by Aymen Gharsalli under the Gass-OS project.
+Aymen Gharsalli — Gass-OS
 
-<div align="center">GassNative — Your Android device. Your Linux workspace.
+---
 
-</div>---
-
-<sub>GassNative is experimental software. Debian, Android, XFCE, PRoot and other referenced projects belong to their respective owners.</sub>
+GassNative is experimental software. Compatibility and features may change between releases.
