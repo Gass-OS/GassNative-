@@ -1,4 +1,3 @@
-# GassNative-
 <div align="center">GassNative
 
 A Debian ARM64 Desktop Inside Android
