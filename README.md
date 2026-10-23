@@ -33,7 +33,7 @@ Features
 - XFCE4 desktop — A lightweight Linux desktop environment.
 - Integrated display — Android SurfaceView and Linux display integration.
 - Profile management — Separate Linux environment profiles.
-- System settings — DNS, environment variables, bind mounts and configuration.
+- System settings — DNS, environment variables, bind mounts, and configuration.
 - Terminal tools — Access to the Debian command-line environment.
 - Crash reporting — Diagnostics for troubleshooting application issues.
 - Windows compatibility research — Bundled Wine/Hangover components.
@@ -45,20 +45,20 @@ Technology Stack
 
 Android Application Development
 
-<div align="center">""Java" (https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)" (https://www.java.com/)
-""Android SDK" (https://img.shields.io/badge/Android_SDK-3DDC84?style=for-the-badge&logo=android&logoColor=white)" (https://developer.android.com/)
-""Bash" (https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)" (https://www.gnu.org/software/bash/)
+<div align="center">"Java" (https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+"Android SDK" (https://img.shields.io/badge/Android_SDK-3DDC84?style=for-the-badge&logo=android&logoColor=white)
+"Bash" (https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)
 
 </div>The project uses Java for Android application logic and Bash for the manual build process and automation.
 
-The current source tree contains 33 Java source files and one Bash build script. The APK is built using Android SDK tools rather than Gradle.
+The APK is built using Android SDK tools rather than Gradle.
 
 Linux Environment and Desktop
 
-<div align="center">""Debian" (https://img.shields.io/badge/Debian-A81D33?style=for-the-badge&logo=debian&logoColor=white)" (https://www.debian.org/)
-""Linux" (https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)" (https://www.kernel.org/)
-""XFCE" (https://img.shields.io/badge/XFCE-Desktop-2284F2?style=for-the-badge)" (https://xfce.org/)
-""Wayland" (https://img.shields.io/badge/Wayland-Display-FFBC00?style=for-the-badge)" (https://wayland.freedesktop.org/)
+<div align="center">"Debian" (https://img.shields.io/badge/Debian-A81D33?style=for-the-badge&logo=debian&logoColor=white)
+"Linux" (https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+"XFCE" (https://img.shields.io/badge/XFCE-Desktop-2284F2?style=for-the-badge)
+"Wayland" (https://img.shields.io/badge/Wayland-Display-FFBC00?style=for-the-badge)
 
 </div>The Linux environment is based on Debian 13 Trixie for ARM64. XFCE4 provides the desktop interface, while PRoot enables rootless execution of the Linux userspace.
 
@@ -66,20 +66,20 @@ Wayland and Xwayland technologies are part of the graphical integration work.
 
 Native Components and Graphics
 
-<div align="center">""C" (https://img.shields.io/badge/C-Native_Code-A8B9CC?style=for-the-badge&logo=c&logoColor=black)" (https://en.cppreference.com/w/c)
-""Clang" (https://img.shields.io/badge/Clang-LLVM-262D3A?style=for-the-badge&logo=llvm&logoColor=white)" (https://clang.llvm.org/)
-""Mesa" (https://img.shields.io/badge/Mesa-Graphics-750000?style=for-the-badge)" (https://mesa3d.org/)
+<div align="center">"C" (https://img.shields.io/badge/C-Native_Code-A8B9CC?style=for-the-badge&logo=c&logoColor=black)
+"Clang" (https://img.shields.io/badge/Clang-LLVM-262D3A?style=for-the-badge&logo=llvm&logoColor=white)
+"Mesa" (https://img.shields.io/badge/Mesa-Graphics-750000?style=for-the-badge)
 
 </div>GassNative packages precompiled native libraries and investigates integration with the Linux graphics stack, including Mesa and Qualcomm Adreno graphics hardware.
 
-The badges identify relevant technologies in the project's native and graphics ecosystem; they do not imply that every component is compiled from source within this repository.
+These badges identify technologies relevant to the project's native and graphics ecosystem; they do not imply that every component is compiled from source within this repository.
 
 Additional Development Ecosystem
 
-<div align="center">""JavaScript" (https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)" (https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-""Rust" (https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)" (https://www.rust-lang.org/)
+<div align="center">"JavaScript" (https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+"Rust" (https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
 
-</div>JavaScript and Rust are relevant technologies in the broader development ecosystem and may be used by tools or applications inside Debian. They are not currently identified as implementation languages in the GassNative Android source tree.
+</div>JavaScript and Rust are relevant to the broader development ecosystem but are not identified as primary implementation languages in the GassNative Android source tree.
 
 Architecture
 
@@ -136,11 +136,11 @@ Graphics acceleration remains experimental. Software rendering or incomplete fun
 Requirements
 
 - Android 7.0 or newer.
-- ARM64-compatible Android device.
+- An ARM64-compatible Android device.
 - Sufficient free storage for the application, Debian environment, and additional packages.
 - Internet access for Debian installation and downloading packages when required.
 
-The actual storage requirement depends on the installed desktop applications and compatibility components.
+Actual storage requirements depend on the installed desktop applications and compatibility components.
 
 Installation
 
@@ -194,13 +194,13 @@ Project Status
 
 Experimental — Active Development
 
-GassNative is under active development. Features, performance, compatibility and installation behavior may change between releases.
+GassNative is under active development. Features, performance, compatibility, and installation behavior may change between releases.
 
 Issues and reproducible bug reports are welcome.
 
 Contributing
 
-Contributions, testing, bug reports and technical discussions are welcome.
+Contributions, testing, bug reports, and technical discussions are welcome.
 
 When reporting an issue, please include:
 
