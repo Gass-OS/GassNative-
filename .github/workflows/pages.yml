@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'index.html'
+      - 'update.json'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -33,6 +34,7 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html _site/index.html
+          cp update.json _site/update.json
 
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
