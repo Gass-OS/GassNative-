@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080b16">
-<meta name="description" content="GassNative — Debian Linux desktop on Android.">
-<title>GassNative — Linux, unleashed.</title>
+<meta name="description" content="GassNative is an experimental Android app bringing Debian ARM64 Linux and an XFCE desktop to mobile devices using PRoot.">
+<title>GassNative — Debian Linux on Android | Gass-OS</title>
 <style>
 :root{color-scheme:dark;--bg:#080b16;--panel:#10172a;--line:#ffffff16;--muted:#a3afc9;--blue:#80aaff;--violet:#b49aff}
 *{box-sizing:border-box}
@@ -78,12 +78,12 @@ footer{border-top:1px solid var(--line);padding:25px 0 35px;display:flex;justify
 <div>
 <div class="pill"><i class="pulse"></i> ANDROID · LINUX · ARM64</div>
 <h1>Linux desktop.<br><span class="grad">No boundaries.</span></h1>
-<p class="lead">A Debian Linux environment with an XFCE desktop, brought to Android through the GassNative project. Your device. Your workspace.</p>
+<p class="lead">GassNative is an experimental Android application that brings a Debian ARM64 Linux userspace and XFCE desktop experience to compatible Android devices. Explore Linux tools on the device you already carry.</p>
 <div class="actions">
 <a class="btn primary" href="https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk">↓ Download Build 7</a>
 <a class="btn secondary" href="https://github.com/Gass-OS/GassNative-">⌘ Explore source</a>
 </div>
-<div class="meta"><span>Android 7.0+</span><span>ARM64</span><span>Rootless approach</span></div>
+<div class="meta"><span>Android 7.0+</span><span>ARM64</span><span>No Android root required</span></div>
 </div>
 <div class="visual"><div class="desktop">
 <div class="top"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>GassNative · Linux desktop</span></div>
@@ -94,28 +94,35 @@ footer{border-top:1px solid var(--line);padding:25px 0 35px;display:flex;justify
 </div></div></div>
 </header>
 <section id="features">
-<div class="kicker">Made for explorers</div>
+<div class="kicker">Meet the project</div>
+<h2>What is <span class="grad">GassNative?</span></h2>
+<p class="sub">GassNative connects Android and Debian Linux in one experimental project. The Android app manages a Debian ARM64 userspace, while PRoot provides a rootless way to run Linux userspace tools. The goal is to make a portable Linux workspace more accessible on mobile hardware.</p>
+<div class="split" style="margin-top:24px">
+<article class="card"><div class="icon">📱</div><h3>Built for Android</h3><p>Install the APK, configure your Linux environment, and manage profiles and settings from a dedicated Android interface.</p></article>
+<article class="card"><div class="icon">🐧</div><h3>A Debian Linux userspace</h3><p>Use Debian ARM64 packages and an XFCE desktop session. App compatibility and performance depend on the package and device.</p></article>
+</div>
+<div class="kicker" style="margin-top:42px">Features</div>
 <h2>Your Linux environment.<br><span class="grad">Your way.</span></h2>
-<p class="sub">A native Android app meets a familiar Linux userspace. Explore the desktop, tools and possibilities of Linux on mobile hardware.</p>
+<p class="sub">Explore the desktop, tools and possibilities of Linux on mobile hardware—with clear notes about what is experimental.</p>
 <div class="grid">
-<article class="card"><div class="icon">◈</div><h3>Debian ARM64</h3><p>A 64-bit Debian userspace for compatible Android devices.</p></article>
+<article class="card"><div class="icon">◈</div><h3>Debian ARM64</h3><p>A Debian 13 Trixie ARM64 userspace for compatible 64-bit Android devices.</p></article>
 <article class="card"><div class="icon">▦</div><h3>XFCE desktop</h3><p>A lightweight desktop with familiar panels, windows and applications.</p></article>
-<article class="card"><div class="icon">⌘</div><h3>PRoot environment</h3><p>Designed to run Linux userspace without requiring Android root access.</p></article>
-<article class="card"><div class="icon">▣</div><h3>Native Android app</h3><p>Manage the Linux environment, profiles and settings from GassNative.</p></article>
+<article class="card"><div class="icon">⌘</div><h3>PRoot environment</h3><p>Runs Linux userspace through PRoot without requiring Android root access; it is not a full virtual machine.</p></article>
+<article class="card"><div class="icon">▣</div><h3>Native Android app</h3><p>Manage installation, profiles, DNS, bind mounts and environment settings from the Android interface.</p></article>
 <article class="card"><div class="icon">◉</div><h3>Display research</h3><p>Ongoing exploration of Wayland, Xwayland and integrated display rendering.</p></article>
-<article class="card"><div class="icon">⌁</div><h3>Graphics exploration</h3><p>GPU acceleration and device compatibility remain active development areas.</p></article>
+<article class="card"><div class="icon">⌁</div><h3>Graphics exploration</h3><p>GPU acceleration is experimental; not every app or device is guaranteed to use hardware rendering.</p></article>
 </div>
 </section>
 <section id="tech">
 <div class="split">
-<div class="card"><div class="kicker">Under the hood</div><h2>Linux foundations.<br>Mobile experience.</h2><p>GassNative combines a Debian userspace with a custom Android application and a desktop integration layer.</p><div class="tags"><span class="tag">Debian 13</span><span class="tag">PRoot</span><span class="tag">XFCE4</span><span class="tag">Android SDK</span><span class="tag">ARM64</span></div></div>
+<div class="card"><div class="kicker">Under the hood</div><h2>Linux foundations.<br>Mobile experience.</h2><p>GassNative combines a Java Android application, PRoot, Debian ARM64 userspace and an integrated desktop display layer. It is an evolving project, and not every Linux application is guaranteed to work.</p><div class="tags"><span class="tag">Debian 13</span><span class="tag">PRoot</span><span class="tag">XFCE4</span><span class="tag">Android SDK</span><span class="tag">ARM64</span></div></div>
 <div class="card"><div class="kicker">The roadmap</div><h2>Built to evolve.</h2><p>Development explores input handling, desktop integration, display performance and graphics acceleration.</p><p style="margin-top:15px"><a class="btn secondary" href="https://github.com/Gass-OS/GassNative-/issues">Follow development ↗</a></p></div>
 </div>
 </section>
 <section id="about">
 <div class="kicker">Get started</div><h2>Check your setup.</h2>
 <div class="specs"><div class="spec"><b>Android 7.0+</b><span>API level 24 or newer</span></div><div class="spec"><b>ARM64 device</b><span>64-bit ARM recommended</span></div><div class="spec"><b>Free storage</b><span>Space for APK and Linux files</span></div></div>
-<div class="warning">⚠ GassNative is an evolving project. GPU support and application compatibility vary. Review the release notes before installing.</div>
+<div class="warning">⚠ GassNative is experimental software. GPU acceleration, desktop rendering and application compatibility may vary by device and release. Review the release notes before installing.</div>
 </section>
 <section><div class="cta"><div class="kicker">Welcome to GassNative</div><h2>Take Linux with you.</h2><p>Download the latest release or explore the code and follow the project's progress.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk">↓ Download APK</a><a class="btn secondary" href="https://github.com/Gass-OS/GassNative-/releases">All releases ↗</a></div></div></section>
 </main>
