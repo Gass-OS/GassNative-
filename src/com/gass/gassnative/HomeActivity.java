@@ -118,6 +118,7 @@ public class HomeActivity extends Activity {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        UpdateChecker.check(this);
 
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
