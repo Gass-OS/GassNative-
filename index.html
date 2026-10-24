@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,14 +10,14 @@
 <style>
 :root{color-scheme:dark;--bg:#080b16;--panel:#10172a;--line:#ffffff16;--muted:#a3afc9;--blue:#80aaff;--violet:#b49aff}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
 body{margin:0;background:radial-gradient(ellipse at 12% 0%,#203b72 0,transparent 34rem),radial-gradient(ellipse at 90% 35%,#392052 0,transparent 32rem),var(--bg);color:#f5f7ff;font:16px/1.7 system-ui,-apple-system,sans-serif}
 a{color:inherit;text-decoration:none}
 .wrap{width:min(1120px,90%);margin:auto}
-nav{height:84px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+nav{min-height:84px;display:flex;align-items:center;justify-content:space-between;gap:15px}
 .brand{display:flex;align-items:center;gap:11px;font-weight:850;font-size:1.15rem}
 .logo{display:grid;place-items:center;width:43px;height:43px;border-radius:14px;background:linear-gradient(135deg,#75b4ff,#9b79ff);color:#071020;font-size:25px;box-shadow:0 0 35px #829bff50}
-.links{display:flex;gap:24px;color:var(--muted);font-size:.9rem}
+.links{display:flex;flex-wrap:wrap;gap:20px;color:var(--muted);font-size:.9rem}
 .links a:hover{color:white}
 .hero{padding:85px 0 95px;display:grid;grid-template-columns:1.08fr .92fr;gap:45px;align-items:center}
 .pill{display:inline-flex;gap:9px;align-items:center;border:1px solid var(--line);border-radius:50px;padding:6px 12px;color:#c7d6ff;background:#ffffff08;font-size:.78rem;letter-spacing:.08em}
@@ -39,7 +40,7 @@ h1{font-size:clamp(3.2rem,7vw,5.8rem);letter-spacing:-.075em;line-height:.99;mar
 .screen{min-height:350px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(ellipse at 75% 36%,#7953c488,transparent 40%),radial-gradient(ellipse at 28% 30%,#317fc288,transparent 45%),#10182b}
 .caption{font-size:1.5rem;font-weight:850;letter-spacing:-.04em}
 .caption small{display:block;color:#c1cce4;font-size:.8rem;font-weight:450;letter-spacing:0}
-.terminal{padding:15px;background:#070b17e8;border:1px solid #ffffff20;border-radius:12px;font: .77rem/2 ui-monospace,monospace;box-shadow:0 10px 30px #0005}
+.terminal{padding:15px;background:#070b17e8;border:1px solid #ffffff20;border-radius:12px;font:.77rem/2 ui-monospace,monospace;box-shadow:0 10px 30px #0005;overflow-wrap:anywhere}
 .cmd{color:#8db6ff}.good{color:#92efb8}
 .dock{display:flex;justify-content:center;gap:10px}
 .app{width:28px;height:28px;border-radius:9px;background:#ffffff20;border:1px solid #ffffff20}
@@ -58,21 +59,54 @@ h3{margin:0 0 8px;font-size:1.06rem}
 .tag{border:1px solid var(--line);border-radius:9px;padding:6px 10px;color:#c9d5f1;font-size:.83rem}
 .specs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
 .spec{border:1px solid var(--line);border-radius:14px;padding:17px;background:#ffffff05}
-.spec b{display:block}.spec span{font-size:.84rem;color:var(--muted)}
+.spec b{display:block}
+.spec span{font-size:.84rem;color:var(--muted)}
 .warning{border:1px solid #e8c78336;background:#e8c7830b;border-radius:12px;padding:15px 17px;color:#d7c6a3;font-size:.9rem;margin-top:18px}
 .cta{text-align:center;border:1px solid #a8baff30;border-radius:24px;padding:55px 20px;background:radial-gradient(ellipse at 50% 0%,#5154a744,transparent 65%),#ffffff04}
 .cta p{color:var(--muted);max-width:600px;margin:15px auto 25px}
+
+/* GassNative demo video */
+#demo{text-align:center}
+#demo .sub{margin-left:auto;margin-right:auto}
+.demo-player{width:min(100%,420px);margin:30px auto 0;padding:8px;overflow:hidden;border:1px solid #b9caff30;border-radius:23px;background:linear-gradient(140deg,#ffffff18,#ffffff04);box-shadow:0 25px 80px #0008,0 0 50px #788dff18}
+.demo-player iframe{display:block;width:100%;aspect-ratio:9/16;border:0;border-radius:16px;background:#050812}
+.demo-note{text-align:center;color:var(--muted);font-size:.9rem;margin:16px auto 0}
+.demo-note a{color:#b9caff;text-decoration:underline;text-underline-offset:4px}
 footer{border-top:1px solid var(--line);padding:25px 0 35px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.86rem}
-@media(max-width:780px){.hero{grid-template-columns:1fr;padding:55px 0 70px;gap:32px}.grid{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}.links{gap:12px}.screen{min-height:315px}}
-@media(max-width:480px){.links a:nth-child(2){display:none}.grid{grid-template-columns:1fr}h1{font-size:3.45rem}.screen{padding:17px}.specs{grid-template-columns:1fr}}
+
+@media(max-width:780px){
+.hero{grid-template-columns:1fr;padding:55px 0 70px;gap:32px}
+.grid{grid-template-columns:repeat(2,1fr)}
+.split{grid-template-columns:1fr}
+.links{gap:12px}
+.screen{min-height:315px}
+}
+@media(max-width:520px){
+nav{align-items:flex-start;padding:16px 0;flex-direction:column}
+.links{gap:14px;font-size:.85rem}
+.links a:nth-child(2){display:inline}
+.grid{grid-template-columns:1fr}
+h1{font-size:3.45rem}
+.screen{padding:17px}
+.specs{grid-template-columns:1fr}
+.demo-player{width:min(100%,360px)}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
+
 <nav>
 <a class="brand" href="#"><span class="logo">G</span> GassNative</a>
-<div class="links"><a href="#features">Features</a><a href="#tech">Technology</a><a href="#about">About</a><a href="https://github.com/Gass-OS/GassNative-">GitHub ↗</a></div>
+<div class="links">
+<a href="#features">Features</a>
+<a href="#demo">Demo ▶</a>
+<a href="#tech">Technology</a>
+<a href="#about">About</a>
+<a href="https://github.com/Gass-OS/GassNative-" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+</div>
 </nav>
+
 <main>
 <header class="hero">
 <div>
@@ -81,29 +115,51 @@ footer{border-top:1px solid var(--line);padding:25px 0 35px;display:flex;justify
 <p class="lead">GassNative is an experimental Android application that brings a Debian ARM64 Linux userspace and XFCE desktop experience to compatible Android devices. Explore Linux tools on the device you already carry.</p>
 <div class="actions">
 <a class="btn primary" href="https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.3-build9/gassnative.apk">↓ Download v0.3 · Build 9</a>
-<a class="btn secondary" href="https://github.com/Gass-OS/GassNative-">⌘ Explore source</a>
+<a class="btn secondary" href="https://github.com/Gass-OS/GassNative-" target="_blank" rel="noopener noreferrer">⌘ Explore source</a>
 </div>
 <div class="meta"><span>Android 7.0+</span><span>ARM64</span><span>No Android root required</span></div>
 </div>
-<div class="visual"><div class="desktop">
+
+<div class="visual">
+<div class="desktop">
 <div class="top"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>GassNative · Linux desktop</span></div>
 <div class="screen">
 <div class="caption">Debian Linux<small>A desktop that travels with you.</small></div>
-<div class="terminal"><div><span class="cmd">user@gassnative</span>:~$ cat /etc/os-release</div><div>PRETTY_NAME="Debian GNU/Linux"</div><div><span class="cmd">user@gassnative</span>:~$ echo $XDG_CURRENT_DESKTOP</div><div class="good">XFCE</div><div><span class="cmd">user@gassnative</span>:~$ <span class="good">▌</span></div></div>
+<div class="terminal">
+<div><span class="cmd">user@gassnative</span>:~$ cat /etc/os-release</div>
+<div>PRETTY_NAME="Debian GNU/Linux"</div>
+<div><span class="cmd">user@gassnative</span>:~$ echo $XDG_CURRENT_DESKTOP</div>
+<div class="good">XFCE</div>
+<div><span class="cmd">user@gassnative</span>:~$ <span class="good">▌</span></div>
+</div>
 <div class="dock"><i class="app"></i><i class="app"></i><i class="app"></i><i class="app"></i><i class="app"></i></div>
-</div></div></div>
+</div>
+</div>
+</div>
 </header>
+
 <section id="features">
 <div class="kicker">Meet the project</div>
 <h2>What is <span class="grad">GassNative?</span></h2>
 <p class="sub">GassNative v0.3 continues bringing Android and Debian Linux together in an experimental mobile Linux workspace. This release includes desktop and audio improvements, a startup welcome experience, and improved update checking. The Android app manages a Debian ARM64 userspace, while PRoot provides a rootless way to run Linux userspace tools.</p>
+
 <div class="split" style="margin-top:24px">
-<article class="card"><div class="icon">📱</div><h3>Built for Android</h3><p>Install the APK, configure your Linux environment, and manage profiles and settings from a dedicated Android interface.</p></article>
-<article class="card"><div class="icon">🐧</div><h3>A Debian Linux userspace</h3><p>Use Debian ARM64 packages and an XFCE desktop session. App compatibility and performance depend on the package and device.</p></article>
+<article class="card">
+<div class="icon">📱</div>
+<h3>Built for Android</h3>
+<p>Install the APK, configure your Linux environment, and manage profiles and settings from a dedicated Android interface.</p>
+</article>
+<article class="card">
+<div class="icon">🐧</div>
+<h3>A Debian Linux userspace</h3>
+<p>Use Debian ARM64 packages and an XFCE desktop session. App compatibility and performance depend on the package and device.</p>
+</article>
 </div>
+
 <div class="kicker" style="margin-top:42px">Features</div>
 <h2>Your Linux environment.<br><span class="grad">Your way.</span></h2>
 <p class="sub">Explore the desktop, tools and possibilities of Linux on mobile hardware—with clear notes about what is experimental.</p>
+
 <div class="grid">
 <article class="card"><div class="icon">◈</div><h3>Debian ARM64</h3><p>A Debian 13 Trixie ARM64 userspace for compatible 64-bit Android devices.</p></article>
 <article class="card"><div class="icon">▦</div><h3>XFCE desktop</h3><p>A lightweight desktop with familiar panels, windows and applications.</p></article>
@@ -113,20 +169,71 @@ footer{border-top:1px solid var(--line);padding:25px 0 35px;display:flex;justify
 <article class="card"><div class="icon">⌁</div><h3>Graphics exploration</h3><p>GPU acceleration is experimental; not every app or device is guaranteed to use hardware rendering.</p></article>
 </div>
 </section>
+
+<section id="demo">
+<div class="kicker">Watch it in action</div>
+<h2>GassNative <span class="grad">Demo.</span></h2>
+<p class="sub">See GassNative bringing a Debian Linux desktop to Android. Watch the short demo below.</p>
+
+<div class="demo-player">
+<iframe
+src="https://www.youtube-nocookie.com/embed/XX07Tj6ZtAI"
+title="GassNative demo video by Gass-OS"
+loading="lazy"
+allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+referrerpolicy="strict-origin-when-cross-origin"
+allowfullscreen>
+</iframe>
+</div>
+<p class="demo-note">Video by Gass-OS · <a href="https://youtube.com/shorts/XX07Tj6ZtAI" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a></p>
+</section>
+
 <section id="tech">
 <div class="split">
-<div class="card"><div class="kicker">Under the hood</div><h2>Linux foundations.<br>Mobile experience.</h2><p>GassNative combines a Java Android application, PRoot, Debian ARM64 userspace and an integrated desktop display layer. It is an evolving project, and not every Linux application is guaranteed to work.</p><div class="tags"><span class="tag">Debian 13</span><span class="tag">PRoot</span><span class="tag">XFCE4</span><span class="tag">Android SDK</span><span class="tag">ARM64</span></div></div>
-<div class="card"><div class="kicker">The roadmap</div><h2>Built to evolve.</h2><p>Development explores input handling, desktop integration, display performance and graphics acceleration.</p><p style="margin-top:15px"><a class="btn secondary" href="https://github.com/Gass-OS/GassNative-/issues">Follow development ↗</a></p></div>
+<div class="card">
+<div class="kicker">Under the hood</div>
+<h2>Linux foundations.<br>Mobile experience.</h2>
+<p>GassNative combines a Java Android application, PRoot, Debian ARM64 userspace and an integrated desktop display layer. It is an evolving project, and not every Linux application is guaranteed to work.</p>
+<div class="tags"><span class="tag">Debian 13</span><span class="tag">PRoot</span><span class="tag">XFCE4</span><span class="tag">Android SDK</span><span class="tag">ARM64</span></div>
+</div>
+<div class="card">
+<div class="kicker">The roadmap</div>
+<h2>Built to evolve.</h2>
+<p>Development explores input handling, desktop integration, display performance and graphics acceleration.</p>
+<p style="margin-top:15px"><a class="btn secondary" href="https://github.com/Gass-OS/GassNative-/issues" target="_blank" rel="noopener noreferrer">Follow development ↗</a></p>
+</div>
 </div>
 </section>
+
 <section id="about">
-<div class="kicker">Get started</div><h2>Check your setup.</h2>
-<div class="specs"><div class="spec"><b>Android 7.0+</b><span>API level 24 or newer</span></div><div class="spec"><b>ARM64 device</b><span>64-bit ARM recommended</span></div><div class="spec"><b>Free storage</b><span>Space for APK and Linux files</span></div></div>
+<div class="kicker">Get started</div>
+<h2>Check your setup.</h2>
+<div class="specs">
+<div class="spec"><b>Android 7.0+</b><span>API level 24 or newer</span></div>
+<div class="spec"><b>ARM64 device</b><span>64-bit ARM recommended</span></div>
+<div class="spec"><b>Free storage</b><span>Space for APK and Linux files</span></div>
+</div>
 <div class="warning">⚠ GassNative is experimental software. GPU acceleration, desktop rendering and application compatibility may vary by device and release. Review the release notes before installing.</div>
 </section>
-<section><div class="cta"><div class="kicker">Welcome to GassNative</div><h2>Take Linux with you.</h2><p>Download the latest release or explore the code and follow the project's progress.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.3-build9/gassnative.apk">↓ Download v0.3 APK</a><a class="btn secondary" href="https://github.com/Gass-OS/GassNative-/releases">All releases ↗</a></div></div></section>
+
+<section>
+<div class="cta">
+<div class="kicker">Welcome to GassNative</div>
+<h2>Take Linux with you.</h2>
+<p>Download the latest release or explore the code and follow the project's progress.</p>
+<div class="actions" style="justify-content:center">
+<a class="btn primary" href="https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.3-build9/gassnative.apk">↓ Download v0.3 APK</a>
+<a class="btn secondary" href="https://github.com/Gass-OS/GassNative-/releases" target="_blank" rel="noopener noreferrer">All releases ↗</a>
+</div>
+</div>
+</section>
 </main>
-<footer><span>© 2026 GassNative · Gass-OS</span><span><a href="https://github.com/Gass-OS">GitHub</a> · Open-source project</span></footer>
+
+<footer>
+<span>© 2026 GassNative · Gass-OS</span>
+<span><a href="https://github.com/Gass-OS" target="_blank" rel="noopener noreferrer">GitHub</a> · Open-source project</span>
+</footer>
+
 </div>
 </body>
 </html>
