@@ -67,7 +67,7 @@ private volatile boolean desktopIntroCancelled;
         super.onCreate(b);
 
         root = Cfg.rootDir(this);
-        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 18", android.widget.Toast.LENGTH_SHORT).show();
+        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 20", android.widget.Toast.LENGTH_SHORT).show();
         nativeDir = getApplicationInfo().nativeLibraryDir;
         runDir = new File(getFilesDir(), "run");
         runDir.mkdirs(); new File(getCacheDir(),"dnc").mkdirs(); new File(getCacheDir(),"proot").mkdirs();
@@ -318,7 +318,7 @@ rootRef = rootView; setContentView(rootView);
         hideSystemUi();
     }
 
-    private static final String GASS_SESSION = "#!/bin/bash\nexport DISPLAY=:1 XDG_SESSION_TYPE=x11 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb\nexport XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_ENABLE_WAYLAND=0\n(exec 3<>/dev/tcp/127.0.0.1/4713) 2>/dev/null && export PULSE_SERVER=127.0.0.1\nexport TU_DEBUG=noconform MESA_NO_ERROR=1 vblank_mode=0 mesa_glthread=true MESA_VK_WSI_PRESENT_MODE=mailbox\nICD=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json\nXM=$(cat /tmp/gass-xmode 2>/dev/null || echo shm)\nCACHE=$HOME/.gass-gpu-$XM\nPREF=GASS_GPU_PREFERENCE\nmode_env() {\n  case $1 in\n    freedreno) echo \"MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl FD_FORCE_KGSL=1 GALLIUM_DRIVER=freedreno\" ;;\n    zink) echo \"VK_ICD_FILENAMES=$ICD MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink\" ;;\n    *) echo \"LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe\" ;;\n  esac\n}\nworks() {\n  env $(mode_env $1) timeout 10 glxinfo -B 2>/dev/null | grep -i \"renderer string\" | grep -qiE \"adreno|zink|freedreno|turnip\"\n}\necho \"GASS-STATUS Selecting GPU mode\"\nMODE=llvmpipe\ncase \"$PREF\" in\n  zink|freedreno|llvmpipe) MODE=$PREF ;;\n  *)\n    if [ \"$XM\" = glamor ]; then\n      if [ -r \"$CACHE\" ]; then\n        cached=$(cat \"$CACHE\")\n        case \"$cached\" in zink|freedreno|llvmpipe) MODE=$cached ;; esac\n      elif command -v glxinfo >/dev/null 2>&1; then\n        for m in zink freedreno; do\n          if works $m; then MODE=$m; break; fi\n        done\n        echo \"$MODE\" > \"$CACHE\"\n      fi\n    fi\n    ;;\nesac\necho \"X server: $XM, GPU mode: $MODE\" > $HOME/.gass-gpu.log\necho \"GASS-STATUS GPU: $MODE - starting XFCE\"\nexport $(mode_env $MODE)\nif command -v xclip >/dev/null 2>&1; then\n  ( lp=\"\"; lc=\"\"\n    while true; do\n      a=$(timeout 2 xclip -o -selection primary 2>/dev/null | base64 -w0)\n      if [ -n \"$a\" ] && [ \"$a\" != \"$lp\" ]; then lp=$a; echo \"GASS-CLIP $a\"; fi\n      b=$(timeout 2 xclip -o -selection clipboard 2>/dev/null | base64 -w0)\n      if [ -n \"$b\" ] && [ \"$b\" != \"$lc\" ]; then lc=$b; echo \"GASS-CLIP $b\"; fi\n      sleep 1\n    done ) &\nfi\n( for i in $(seq 1 60); do\n    if pgrep -x xfce4-panel >/dev/null 2>&1; then sleep 1; echo GASS-READY; break; fi\n    sleep 1\n  done ) &\nexec dbus-launch --exit-with-session startxfce4\n";
+    private static final String GASS_SESSION = "#!/bin/bash\nexport DISPLAY=:1 XDG_SESSION_TYPE=x11 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb\nexport XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_ENABLE_WAYLAND=0\n(exec 3<>/dev/tcp/127.0.0.1/4713) 2>/dev/null && export PULSE_SERVER=127.0.0.1\nexport TU_DEBUG=noconform MESA_NO_ERROR=1 vblank_mode=0 mesa_glthread=true MESA_VK_WSI_PRESENT_MODE=mailbox\nICD=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json\nXM=$(cat /tmp/gass-xmode 2>/dev/null || echo shm)\nCACHE=$HOME/.gass-gpu-$XM\nPREF=GASS_GPU_PREFERENCE\nmode_env() {\n  case $1 in\n    freedreno) echo \"MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl FD_FORCE_KGSL=1 GALLIUM_DRIVER=freedreno\" ;;\n    zink) echo \"VK_ICD_FILENAMES=$ICD MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink\" ;;\n    *) echo \"LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe\" ;;\n  esac\n}\nworks() {\n  env $(mode_env $1) timeout 10 glxinfo -B 2>/dev/null | grep -i \"renderer string\" | grep -qiE \"adreno|zink|freedreno|turnip\"\n}\necho \"GASS-STATUS Selecting GPU mode\"\nMODE=llvmpipe\ncase \"$PREF\" in\n  zink|freedreno|llvmpipe) MODE=$PREF ;;\n  *)\n    if [ \"$XM\" = glamor ]; then\n      if [ -r \"$CACHE\" ]; then\n        cached=$(cat \"$CACHE\")\n        case \"$cached\" in zink|freedreno|llvmpipe) MODE=$cached ;; esac\n      elif command -v glxinfo >/dev/null 2>&1; then\n        for m in zink freedreno; do\n          if works $m; then MODE=$m; break; fi\n        done\n        echo \"$MODE\" > \"$CACHE\"\n      fi\n    fi\n    ;;\nesac\necho \"X server: $XM, GPU mode: $MODE\" > $HOME/.gass-gpu.log\necho \"GASS-STATUS GPU: $MODE - starting XFCE\"\nexport $(mode_env $MODE)\nif command -v xclip >/dev/null 2>&1; then\n  ( lp=\"\"; lc=\"\"\n    while true; do\n      a=$(timeout 2 xclip -o -selection primary 2>/dev/null | base64 -w0)\n      if [ -n \"$a\" ] && [ \"$a\" != \"$lp\" ]; then lp=$a; echo \"GASS-CLIP $a\"; fi\n      b=$(timeout 2 xclip -o -selection clipboard 2>/dev/null | base64 -w0)\n      if [ -n \"$b\" ] && [ \"$b\" != \"$lc\" ]; then lc=$b; echo \"GASS-CLIP $b\"; fi\n      sleep 1\n    done ) &\nfi\n( for i in $(seq 1 60); do\n    if pgrep -x xfce4-panel >/dev/null 2>&1; then sleep 1; echo GASS-READY; break; fi\n    sleep 1\n  done ) &\n( while true; do\n    if [ -s $HOME/.gass-autorun ] && pgrep -x xfce4-panel >/dev/null 2>&1; then\n      c=$(cat $HOME/.gass-autorun); rm -f $HOME/.gass-autorun\n      ( export DISPLAY=:1; unset WAYLAND_DISPLAY; sh -c \"$c\" >/tmp/gass-autorun.log 2>&1 ) &\n    fi\n    sleep 1\n  done ) &\nexec dbus-launch --exit-with-session startxfce4\n";
     static class SplashBar extends View {
         final android.graphics.Paint pt = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         float prog = 0f;
@@ -946,6 +946,20 @@ rootRef = rootView; setContentView(rootView);
         } catch (Throwable ignored) {}
     }
 
+    private void writeAutorun(android.content.Intent in) {
+        try {
+            String c = in == null ? null : in.getStringExtra("autorun");
+            if (c == null || c.isEmpty()) return;
+            File f = new File(root, "home/user/.gass-autorun");
+            f.getParentFile().mkdirs();
+            java.io.FileWriter w = new java.io.FileWriter(f);
+            w.write(c);
+            w.close();
+        } catch (Throwable t) {
+            android.util.Log.e("GassNativeDesktop", "autorun", t);
+        }
+    }
+
     private void startCompositor() {
         if (starting || (compositor != null && compositor.isRunning())) {
             say("Compositor is already running or starting.");
@@ -1175,6 +1189,7 @@ rootRef = rootView; setContentView(rootView);
     protected void onNewIntent(android.content.Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        writeAutorun(intent);
         if (intent != null) {
             String cmd = intent.getStringExtra("linux_command");
             if (cmd != null && !cmd.trim().isEmpty()) {
