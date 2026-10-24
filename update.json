@@ -1,15 +1,15 @@
 {
-  "versionCode": 9,
-  "versionName": "0.3",
+  "versionCode": 10,
+  "versionName": "0.4",
   "downloadUrl": "https://github.com/Gass-OS/GassNative-/releases/latest",
-  "releaseNotes": "GassNative 0.3: audio and desktop improvements, welcome news, and update-checking improvements. Experimental release.",
+  "releaseNotes": "GassNative 0.4 Build 10: redesigned UI, Radio, TV, Games, and desktop improvements.",
   "news": [
     {
       "id": "gassnative-welcome-2026-10",
-      "title": "Welcome to GassNative!",
-      "message": "Welcome to Gass-OS! Explore your Debian Linux desktop, discover the available tools, and follow the project as it evolves. GassNative is experimental software; keep backups of important files. Thank you for trying GassNative.",
+      "title": "GassNative 0.4 is here!",
+      "message": "Discover the new GassNative interface, Radio, TV, Games, and desktop improvements.",
       "buttonText": "Read release notes",
-      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.3-build9"
+      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.4-build10"
     }
   ]
 }
