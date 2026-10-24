@@ -118,7 +118,6 @@ public class HomeActivity extends Activity {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        UpdateChecker.check(this);
 
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
@@ -286,8 +285,37 @@ section(col, "SMART HELPER");
         col.addView(footer);
 
         setContentView(scroll);
+        showWelcomeIfNeeded();
     }
 
+
+
+    private void showWelcomeIfNeeded() {
+        android.content.SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        if (prefs.getBoolean("welcome_shown_v1", false)) {
+            UpdateChecker.check(this);
+            return;
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle("Welcome to GassNative")
+            .setMessage(
+                "Welcome to Gass-OS!\n\n" +
+                "GassNative brings a Debian Linux workspace and desktop " +
+                "applications to Android. Explore your desktop and watch " +
+                "for project news and updates.\n\n" +
+                "GassNative is experimental software. Keep backups of " +
+                "important files.")
+            .setCancelable(false)
+            .setPositiveButton("Let's get started", (d, w) -> {})
+            .create();
+
+        dialog.setOnDismissListener(d -> {
+            prefs.edit().putBoolean("welcome_shown_v1", true).apply();
+            UpdateChecker.check(this);
+        });
+        dialog.show();
+    }
 
     private void copyText(String label, String value) {
         ClipboardManager clipboard =

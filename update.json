@@ -1,6 +1,15 @@
 {
-  "versionCode": 8,
-  "versionName": "0.2",
+  "versionCode": 9,
+  "versionName": "0.3",
   "downloadUrl": "https://github.com/Gass-OS/GassNative-/releases/latest",
-  "releaseNotes": "Introduces startup update checking and includes GassNative improvements."
+  "releaseNotes": "GassNative 0.3: audio and desktop improvements, welcome news, and update-checking improvements. Experimental release.",
+  "news": [
+    {
+      "id": "gassnative-welcome-2026-10",
+      "title": "Welcome to GassNative!",
+      "message": "Welcome to Gass-OS! Explore your Debian Linux desktop, discover the available tools, and follow the project as it evolves. GassNative is experimental software; keep backups of important files. Thank you for trying GassNative.",
+      "buttonText": "Read release notes",
+      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.3-build9"
+    }
+  ]
 }
