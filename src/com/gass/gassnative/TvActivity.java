@@ -93,7 +93,7 @@ public class TvActivity extends Activity {
         listScroll = sv;
         root.addView(sv, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        setContentView(root);
+        GassUi.setContent(this, root);
         GassUi.chipSelect(chips.get(0), true);
         loadPlaylist(SRC[0][1]);
     }

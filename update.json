@@ -1,15 +1,15 @@
 {
-  "versionCode": 10,
-  "versionName": "0.4",
+  "versionCode": 11,
+  "versionName": "0.5",
   "downloadUrl": "https://github.com/Gass-OS/GassNative-/releases/latest",
-  "releaseNotes": "GassNative 0.4 Build 10: redesigned UI, Radio, TV, Games, and desktop improvements.",
+  "releaseNotes": "GassNative 0.5 Build 11: colorful Papirus-inspired icons, updated interface, and desktop improvements.",
   "news": [
     {
       "id": "gassnative-welcome-2026-10",
-      "title": "GassNative 0.4 is here!",
-      "message": "Discover the new GassNative interface, Radio, TV, Games, and desktop improvements.",
+      "title": "GassNative 0.5 is here!",
+      "message": "Explore colorful new icons, a refreshed interface, and improved Linux desktop features.",
       "buttonText": "Read release notes",
-      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.4-build10"
+      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.5-build11"
     }
   ]
 }

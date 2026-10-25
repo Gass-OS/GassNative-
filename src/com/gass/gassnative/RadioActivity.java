@@ -96,7 +96,7 @@ public class RadioActivity extends Activity {
         bar.addView(toggle, new LinearLayout.LayoutParams(GassUi.dp(this, 48), GassUi.dp(this, 48)));
         root.addView(bar);
 
-        setContentView(root);
+        GassUi.setContent(this, root);
         GassUi.chipSelect(chips.get(0), true);
         load("", null);
     }

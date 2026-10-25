@@ -66,8 +66,8 @@ private volatile boolean desktopIntroCancelled;
     protected void onCreate(Bundle b) {
         super.onCreate(b);
 
-        root = Cfg.rootDir(this);
-        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 20", android.widget.Toast.LENGTH_SHORT).show();
+        root = Cfg.rootDir(this); instance = this;
+        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 21", android.widget.Toast.LENGTH_SHORT).show();
         nativeDir = getApplicationInfo().nativeLibraryDir;
         runDir = new File(getFilesDir(), "run");
         runDir.mkdirs(); new File(getCacheDir(),"dnc").mkdirs(); new File(getCacheDir(),"proot").mkdirs();
@@ -960,6 +960,13 @@ rootRef = rootView; setContentView(rootView);
         }
     }
 
+    static DesktopActivity instance;
+
+    void powerOff() {
+        stopDesktop();
+        finish();
+    }
+
     private void startCompositor() {
         if (starting || (compositor != null && compositor.isRunning())) {
             say("Compositor is already running or starting.");
@@ -1579,6 +1586,7 @@ rootRef = rootView; setContentView(rootView);
 
     @Override
     protected void onDestroy() {
+        if (instance == this) instance = null;
         stopDesktopIntroAudio();
         stopDesktop();
         super.onDestroy();

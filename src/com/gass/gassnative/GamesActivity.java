@@ -36,7 +36,7 @@ public class GamesActivity extends Activity {
         list.setOrientation(LinearLayout.VERTICAL);
         sv.addView(list);
         root.addView(sv, new LinearLayout.LayoutParams(-1, 0, 1));
-        setContentView(root);
+        GassUi.setContent(this, root);
     }
 
     @Override
