@@ -1,11 +1,3 @@
-
-
-https://github.com/user-attachments/assets/8e41b19f-9c1d-48fd-9b3e-a512d078a9c4
-
-
-
-
-
 <div align="center">
 
 # GassNative
