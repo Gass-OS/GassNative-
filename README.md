@@ -38,6 +38,12 @@ It uses PRoot to run a Linux userspace without requiring root access to Android.
 - Configurable DNS, profiles, bind mounts and environment variables
 - Ongoing work on desktop integration and GPU acceleration
 
+## 🎬 Installation Tutorial
+
+New to GassNative? Follow our video guide to install GassNative, set up Debian, and launch your Linux desktop on Android.
+
+[▶ Watch Setup Video](https://youtu.be/IqUUVPbye5g)
+
 ## Installation
 
 1. Download the [GassNative APK](https://github.com/Gass-OS/GassNative-/releases/download/gassnative-v0.1-build7/gassnative.apk).
