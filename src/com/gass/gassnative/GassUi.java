@@ -18,7 +18,7 @@ public final class GassUi {
     public static final int BLUE = 0xFF6EC1FF;
     public static final int TEXT = 0xFFF4F7FF;
     public static final int MUTED = 0xFF9FB0D6;
-    public static final int TV = 0, RADIO = 1, GAME = 2, PLAY = 3, STOP = 4, BACK = 5, SEARCH = 6, DESKTOP = 7, MUSIC = 8, TERMINAL = 9, SETTINGS = 10, INFO = 11, PROFILE = 12, POWER = 13, BULB = 14, WINDOWS = 15, PLANET = 16, SHIELD = 17;
+    public static final int TV = 0, RADIO = 1, GAME = 2, PLAY = 3, STOP = 4, BACK = 5, SEARCH = 6, DESKTOP = 7, MUSIC = 8, TERMINAL = 9, SETTINGS = 10, INFO = 11, PROFILE = 12, POWER = 13, BULB = 14, WINDOWS = 15, PLANET = 16, SHIELD = 17, PAUSE = 18, CLOSE = 19;
 
     private GassUi() {}
 
@@ -117,6 +117,7 @@ public final class GassUi {
         FrameLayout f = new FrameLayout(a);
         f.addView(new SpaceView(a), new FrameLayout.LayoutParams(-1, -1));
         f.addView(content, new FrameLayout.LayoutParams(-1, -1));
+        f.addView(new IslandView(a), new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.CENTER_HORIZONTAL));
         a.setContentView(f);
     }
 
@@ -438,6 +439,15 @@ public final class GassUi {
                     c.drawLine(9.5f * u, 9 * u, 9.5f * u, 15 * u, p);
                     c.drawLine(14.5f * u, 8.5f * u, 9.5f * u, 12 * u, p);
                     c.drawLine(10.5f * u, 12 * u, 14.5f * u, 15.5f * u, p);
+                    break;
+                case PAUSE:
+                    p.setStyle(Paint.Style.FILL);
+                    c.drawRoundRect(new RectF(6.5f * u, 5 * u, 10.5f * u, 19 * u), u, u, p);
+                    c.drawRoundRect(new RectF(13.5f * u, 5 * u, 17.5f * u, 19 * u), u, u, p);
+                    break;
+                case CLOSE:
+                    c.drawLine(6 * u, 6 * u, 18 * u, 18 * u, p);
+                    c.drawLine(18 * u, 6 * u, 6 * u, 18 * u, p);
                     break;
                 case SEARCH:
                     c.drawCircle(10.5f * u, 10.5f * u, 6 * u, p);

@@ -1,0 +1,186 @@
+TITLE: Debian package installation
+TOPIC: Debian, APT, install software, package manager
+On Debian, refresh package metadata with: apt update
+Install a package with: apt install PACKAGE_NAME
+Search package names with: apt search KEYWORD
+Show package details with: apt show PACKAGE_NAME
+If a package cannot be found, check the spelling, network access, repository configuration in /etc/apt/sources.list and /etc/apt/sources.list.d/, then run apt update again. Do not run random installation scripts as root.
+
+TITLE: Fixing APT dependency problems
+TOPIC: Debian, apt, dependencies, broken packages
+Read the complete error first. Try apt update, then apt --fix-broken install if package dependencies are incomplete. Review the proposed changes before confirming. dpkg --configure -a can finish interrupted package configuration. If a repository returns 404 or signature errors, check repository URLs, distribution codename, system clock, and network access. Do not delete dpkg lock files while package-manager processes are running.
+
+TITLE: Understanding Linux paths
+TOPIC: Linux, filesystem, folders, paths, root directory
+Linux has one directory tree starting at /. /home contains user home directories; /etc stores system configuration; /usr/bin contains many commands; /var/log stores many logs; /tmp is temporary storage; /dev exposes device nodes; /proc and /sys expose kernel and process information. A path beginning with / is absolute. A path without the leading slash is relative to the current directory. Use pwd to see the current directory and ls -la to list files, including hidden files.
+
+TITLE: Safe file and directory commands
+TOPIC: Linux terminal, files, mkdir, cp, mv, rm
+Use pwd before changing files. mkdir -p DIR creates parent directories as needed. cp SOURCE DEST copies a file; cp -r SOURCE DEST copies directories. mv SOURCE DEST moves or renames. rm FILE removes a file; rm -r DIR recursively removes a directory. rm -rf is destructive and bypasses confirmation, so never paste it without checking the exact path. For important data, make a backup first. Use ls -ld PATH to inspect a target before modifying it.
+
+TITLE: Linux permissions
+TOPIC: chmod, chown, permissions, executable, permission denied
+ls -l displays permissions. chmod u+x SCRIPT makes a script executable for its owner. chmod 755 SCRIPT gives the owner read/write/execute and others read/execute. chmod 644 FILE gives the owner read/write and others read-only. Use chown only when you understand which account should own a file. In Android app sandboxes or PRoot environments, Unix ownership and permissions may not behave exactly like a rooted Linux machine. Do not use chmod 777 as a universal fix.
+
+TITLE: Environment variables
+TOPIC: Linux, environment, export, PATH, variables
+Show an environment variable with: printenv VARIABLE_NAME
+Set one for the current shell with: export NAME=value
+Show PATH with: printf '%s\n' "$PATH"
+A variable exported in a shell is inherited by child processes. Variables set in one terminal session do not automatically persist in another. Avoid putting passwords, access tokens, or private keys into shared scripts, logs, or environment files that other users can read.
+
+TITLE: Linux processes
+TOPIC: process, ps, top, kill, CPU, memory
+Use ps aux to list processes and top to inspect CPU and memory use. If a program hangs, identify its PID before stopping it. kill PID requests a normal termination; kill -9 PID forces termination and should be a last resort. Do not kill a process just because its name is unfamiliar. For services, check the service manager and logs rather than repeatedly killing processes.
+
+TITLE: Reading Linux logs
+TOPIC: logs, troubleshooting, errors, journalctl, dmesg
+Start with the exact error message and the command that produced it. tail -n 100 FILE shows recent lines; grep -i 'error' FILE searches case-insensitively. journalctl -b shows logs from the current boot when systemd and journal logs are available. dmesg may expose kernel messages if permitted. Save the full error and surrounding lines before changing configuration. One error line alone may not reveal the root cause.
+
+TITLE: Network troubleshooting on Linux
+TOPIC: internet, DNS, network, ping, curl, hostname
+Check interface and route information with ip addr and ip route when those tools are available. Test DNS with getent hosts example.com. Test an HTTPS endpoint with curl -I https://example.com if curl is installed. If an IP works but domain names fail, investigate DNS. If neither works, check connectivity, routing, VPNs, firewall rules, and whether the environment has network access. Some networks block ping, so a failed ping alone does not prove the internet is unavailable.
+
+TITLE: DNS configuration
+TOPIC: DNS, resolv.conf, nameserver, domain lookup
+The file /etc/resolv.conf often lists DNS servers, for example a line containing nameserver 1.1.1.1. On some systems it is generated or managed automatically and manual edits may be overwritten. A working DNS server cannot fix a missing network route. In a container or PRoot environment, inspect the file from inside that environment and test resolution there. Do not expose private network details when sharing diagnostic output.
+
+TITLE: Disk space and storage
+TOPIC: storage, disk full, df, du, Android storage
+Use df -h to check free space on mounted filesystems. Use du -sh DIRECTORY to estimate the space used by a directory. Downloads, caches, package archives, and extracted root filesystems can consume much more space than the compressed download. Before deleting anything, identify the exact directory and make sure it is not the only copy of important data. Android app-private storage and shared storage may have different permissions and capacity.
+
+TITLE: Shell command not found
+TOPIC: command not found, PATH, package, terminal
+First check spelling and capitalization; Linux command names are usually case-sensitive. Use command -v NAME to see whether a command is available. If it is absent, identify the Debian package that provides it and install that package if repositories and network access work. If a script runs a command by absolute path, confirm that the file exists and is executable. Do not assume a command installed on Android is automatically available inside Debian.
+
+TITLE: Shell scripts and exit codes
+TOPIC: bash, shell script, exit status, debugging
+A successful command usually returns exit status 0; nonzero status indicates failure or a special condition. Check the previous command with echo $?. In Bash, set -e can stop a script when a command fails, sometimes before later diagnostic commands run. Run bash -x SCRIPT to trace commands when safe. Avoid printing secrets during tracing. Read the first meaningful error rather than focusing only on the final exit code.
+
+TITLE: Android storage access in Termux
+TOPIC: Android, Termux, storage permission, downloads, sdcard
+Termux normally needs its storage setup before accessing shared Android storage. Run termux-setup-storage and accept Android's permission prompt if you want the shared-storage links. The Download directory may be available through ~/storage/downloads after setup, depending on the installation. Android storage restrictions still apply. Keep project source and build files in Termux's private home when possible, rather than building directly in shared storage.
+
+TITLE: ARM64 and Android ABI
+TOPIC: ARM64, aarch64, ABI, native library, APK
+ARM64 Android apps commonly use the arm64-v8a ABI. A native library must match the target architecture and Android's native interface. A library for x86_64 or desktop Linux is not interchangeable with an Android arm64 library just because both use 64-bit instructions. Check the APK's lib/ directory and the device ABI when diagnosing UnsatisfiedLinkError or library loading failures.
+
+TITLE: Installing an Android APK
+TOPIC: APK, install, signature, Android package, update
+An APK update normally needs a compatible application ID and signing certificate. If Android says the package conflicts or cannot be installed, check whether the installed build was signed with a different key, whether the version is compatible, and whether the APK was built for the device. Back up important app data before uninstalling; uninstalling can delete private app data. Do not disable Android security protections to install an unknown APK.
+
+TITLE: GassNative Debian installation
+TOPIC: GassNative, Debian, rootfs, install, extraction, setup
+GassNative installs a Debian userspace inside its Android app storage. During installation, the downloaded archive must be complete and extraction must succeed before the environment can launch. If extraction fails, check the full log, free storage, downloaded file size, and whether another installation is running. Do not delete the existing Debian root directory until you know whether it contains important data. If the app supports staging and validation, preserve that safer installation flow.
+
+TITLE: GassNative profiles
+TOPIC: GassNative, profiles, Linux environment, separate rootfs
+Profiles can keep settings or Linux environments separate, depending on the current GassNative build. Before switching or removing a profile, verify which profile is selected and where its root directory is stored. A profile name is not necessarily a backup. Do not assume deleting a profile removes only its settings; confirm how the installed app handles its files first.
+
+TITLE: GassNative custom environment variables
+TOPIC: GassNative, environment, settings, KEY=VALUE, launch applications
+Environment variables are written as KEY=VALUE, one per line. Variable names should start with a letter or underscore and contain only letters, digits, and underscores. For example, LANG=C.UTF-8 sets a locale preference, but the value only works if the environment has the matching locale installed. Variables affect only the processes that receive them. Never store API secrets in a shared configuration unless the app's storage and access model is understood.
+
+TITLE: GassNative bind mounts
+TOPIC: GassNative, bind mount, host path, guest path, storage
+A bind mount makes a host path visible at a guest path, often written host-path:/guest/path in app settings. Both paths should be absolute. The host path must exist and be accessible to the Android app; the guest path must be suitable inside Debian. A mount does not automatically bypass Android storage permissions. Test with a harmless directory first and avoid mounting sensitive host locations unless needed.
+
+TITLE: GassNative desktop startup
+TOPIC: GassNative, desktop, XFCE, session, launch
+If the desktop does not start, first capture the full startup log and determine whether Debian launches successfully. Then check the session script, X server or display bridge, runtime directory permissions, and whether required XFCE packages are installed. A black screen can come from several layers, so do not reinstall the root filesystem as the first step. Test a simple terminal or window manager command when possible to narrow the failure.
+
+TITLE: XFCE desktop basics
+TOPIC: XFCE, Linux desktop, panel, terminal, applications
+XFCE is a lightweight desktop environment with a panel, window manager, settings tools, and file manager. The terminal lets you run Linux commands. If a panel disappears, the session may still be running; inspect the process list and session logs before restarting components. Settings changed inside Debian affect the Linux desktop, while Android settings affect the host device. They are different configuration layers.
+
+TITLE: X11 display troubleshooting
+TOPIC: X11, Xwayland, DISPLAY, window, black screen
+X11 applications need a reachable display server and a correct DISPLAY environment variable. A value such as :1 identifies a local display number in many setups, but it only works if a server is actually listening for that display. Check the desktop launcher logs and X server startup result. If an application fails, test a simple X11 application first. Do not assume changing resolution settings can override a fullscreen display bridge or its supported modes.
+
+TITLE: Linux graphics and llvmpipe
+TOPIC: GPU, graphics acceleration, Mesa, llvmpipe, Vulkan, OpenGL
+llvmpipe is a CPU-based software renderer in Mesa, so rendering may be slow on complex desktop workloads. Hardware acceleration requires a compatible driver, userspace libraries, access to the host graphics interface, and a display path that supports it. Vulkan and OpenGL are separate APIs and successful Vulkan enumeration does not prove that GLX uses the GPU. Check glxinfo -B, vulkaninfo, relevant environment variables, and the actual application logs. Do not assume a driver override works without verifying the reported renderer.
+
+TITLE: Vulkan versus OpenGL
+TOPIC: Vulkan, OpenGL, graphics API, driver, GPU
+OpenGL and Vulkan are different graphics APIs with different loader and driver paths. A working Vulkan ICD does not guarantee working OpenGL, GLX, EGL, or Zink. Zink implements OpenGL on top of Vulkan and therefore depends on a functional Vulkan stack and compatible integration. Diagnose each API separately and preserve the original environment variables before testing overrides.
+
+TITLE: Linux memory troubleshooting
+TOPIC: RAM, memory, out of memory, free, swap
+Use free -h to view memory statistics where available. A process can fail because the Android host imposes memory limits even when the Linux environment reports a different view. Close unused applications and inspect logs before changing settings. Swap may be unavailable or restricted inside a container or PRoot environment. Do not assume adding swap is safe or supported on an unrooted Android device.
+
+TITLE: Git basics
+TOPIC: Git, repository, commit, status, branch
+Run git status before editing or committing. git diff shows unstaged changes; git diff --staged shows staged changes. git add FILE stages a file and git commit -m "message" records a commit locally. A commit is not the same as a remote push. Before resetting, cleaning, or force-pushing, inspect the affected changes because those operations can discard work.
+
+TITLE: Debugging Java exceptions
+TOPIC: Java, Android, exception, stack trace, crash
+Read the exception type and the first stack-trace lines that point into your own code. The first caused-by section often reveals the underlying failure. A NullPointerException means a value was unexpectedly null; an IOException indicates an input/output failure; a ClassNotFoundException or NoClassDefFoundError often points to packaging or classpath problems. Reproduce the error and fix the cause instead of suppressing the exception without understanding it.
+
+TITLE: Android app logs
+TOPIC: logcat, Android, crash, debugging, adb
+Android app crashes can often be investigated with logcat. Filter by the app's tag or process when possible and capture lines around the crash, not just one isolated line. Avoid posting authentication tokens, personal messages, or other private data in logs. In a manual APK build, also verify that all Java classes and resources are included in the final APK.
+
+TITLE: JSON basics
+TOPIC: JSON, API, parse, object, response
+JSON represents objects with key-value pairs, arrays, strings, numbers, booleans, and null. Keys and string values use double quotes. A response can be valid JSON yet still lack the field an app expects. When an API integration fails, inspect the HTTP status code and a redacted response body before assuming the JSON parser is broken. Never log private credentials while debugging API requests.
+
+TITLE: HTTP API troubleshooting
+TOPIC: HTTP, REST API, status code, timeout, network request
+HTTP 200 usually indicates success, 400 a bad request, 401 missing or invalid authentication, 403 a forbidden request, 404 a missing endpoint, and 5xx a server-side error. These meanings depend on the service. Check the request URL, method, content type, required headers, request body, timeout, and response body. A timeout can be caused by connectivity, a slow server, or an unavailable endpoint. Never embed a privileged server secret in a client APK.
+
+TITLE: Secure API key handling
+TOPIC: API key, secrets, security, Supabase, Android app
+Anything embedded in a distributed APK can potentially be extracted. A publishable or anonymous client key is not equivalent to a secret service-role key. Keep privileged API keys on a trusted server, enforce authentication and row-level security where appropriate, and rotate any secret that was accidentally exposed. Client-side checks are not a substitute for server-side authorization.
+
+TITLE: Backups before troubleshooting
+TOPIC: backup, recovery, rootfs, project files, safety
+Before changing a working environment, back up important source files, configuration, and user data. A backup should be stored separately from the directory being modified and should be verified when possible. Avoid deleting a root filesystem, keystore, signing key, or only copy of a project to solve an unrelated error. For Android APK development, preserve the signing keystore if you need to publish compatible updates.
+
+TITLE: How to ask for technical help
+TOPIC: troubleshooting, support, logs, diagnostics, error
+A useful bug report includes what you expected, what actually happened, the exact command or action, the full error output, and relevant environment details. Mention what changed recently. Remove passwords, access tokens, personal paths, and private identifiers before sharing logs. Change one variable at a time so the result reveals which change helped.
+
+TITLE: Understanding root and PRoot
+TOPIC: root, PRoot, Android, Linux permissions, container
+PRoot can provide a Linux-like filesystem view and emulate some root-related behavior without granting Android kernel root privileges. It does not give unrestricted access to host devices, kernel interfaces, or Android-protected paths. A process that appears to be root inside PRoot is not necessarily privileged on the Android host. Some Linux software requiring kernel features, systemd behavior, or direct device access may not work normally.
+
+TITLE: Locale and UTF-8
+TOPIC: locale, UTF-8, language, terminal, characters
+UTF-8 is a common character encoding for modern Linux environments. If text displays as question marks or mojibake, inspect locale variables such as LANG and LC_ALL, and check whether the needed locale is installed. Setting LANG alone may not generate a missing locale. Terminal font coverage also affects whether characters and emoji display correctly.
+
+TITLE: Compression and archive extraction
+TOPIC: tar, archive, extraction, gzip, disk space, failed download
+An archive extraction error can indicate a corrupt or incomplete download, unsupported archive format, insufficient storage, permissions, a filesystem limitation, or a file that is not actually the expected archive. Verify file size and format, inspect the first real error, and extract to a temporary directory before replacing important files. Do not treat the final exit code as the full diagnosis.
+
+TITLE: Safe use of sudo and root
+TOPIC: sudo, root, administrator, security, Linux commands
+Root can modify or delete system files and affect every user in an environment. Use elevated privileges only when necessary and understand the command first. A command that deletes files or recursively changes permissions can cause severe damage when run as root. Review shell variables and paths before running destructive commands, especially in scripts.
+
+TITLE: Processes listening on ports
+TOPIC: ports, sockets, server, network, lsof, ss
+A local server may listen on a TCP or UDP port. If a port is already in use, identify the owning process using tools such as ss -ltnp or lsof -i when installed and permitted. Check whether the process is expected before stopping it. A localhost service in Android, PRoot, and a desktop display environment may not be reachable from the same network namespace in every setup.
+
+TITLE: Package architecture and Debian
+TOPIC: Debian ARM64, architecture, dpkg, package mismatch
+Check Debian architecture with dpkg --print-architecture and host architecture with uname -m. Debian packages must match the configured architecture and distribution dependencies. A package for amd64 will not normally install as a native arm64 package. Avoid mixing repositories from different Debian releases because dependency conflicts and partial upgrades can break the environment.
+
+TITLE: Firewall and connectivity caution
+TOPIC: firewall, network access, blocked connection, port
+A failed connection can originate from DNS, routing, a firewall, a proxy, the remote server, or an application configuration error. Test the simplest path first and compare name resolution with direct connectivity when appropriate. Do not disable security controls broadly to make one connection work. If the service is remote, verify that the endpoint is online and the required port is intended to be accessible.
+
+TITLE: Updating Debian safely
+TOPIC: apt upgrade, Debian update, packages, maintenance
+Review package changes before a large upgrade. apt update refreshes package metadata; apt upgrade updates installed packages where dependency changes permit. Keep sufficient storage available and avoid interrupting package configuration. In a PRoot environment, system services and kernel-related packages may behave differently from a full Debian installation. Back up important files before major upgrades.
+
+TITLE: Troubleshooting a missing shared library
+TOPIC: shared library, .so, linker, LD_LIBRARY_PATH, Android native
+A missing shared-library error may mean the library is absent, has the wrong architecture, depends on another missing library, or is outside the loader's search path. On Linux, ldd can help inspect dependencies for compatible trusted binaries; do not use it blindly on untrusted executables. Android native libraries also follow Android linker restrictions and are not interchangeable with arbitrary desktop Linux libraries.
+
+TITLE: Why one offline answer may be limited
+TOPIC: offline AI, local knowledge, language model, search
+A text knowledge base can retrieve relevant passages, but retrieval is not the same as generative reasoning. A local Java rules engine can match keywords and return articles without internet access, yet it cannot reliably invent a novel explanation from unrelated passages. If no strong match is found, the safest behavior is to say so and request more detail rather than fabricate an answer.
+
+TITLE: Gass AI offline troubleshooting
+TOPIC: Gass AI, offline, answer, knowledge base, repeated replies
+When the network request fails, Gass AI can use local Java responses and bundled knowledge articles. If an answer is generic, try asking a more specific question that includes the command, error text, or component name. The local search is keyword-based, so it may miss synonyms or misspellings. The online service remains a separate path and may provide broader answers when connectivity is available.

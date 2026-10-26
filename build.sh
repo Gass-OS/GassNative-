@@ -17,6 +17,7 @@ mkdir -p build/lib && cp -r jniLibs/arm64-v8a build/lib/ && (cd build && zip -r 
 zip -r build/app.apk assets/tar-tool
 zip -r build/app.apk assets/audio
 zip -r build/app.apk assets/ui
+zip -r build/app.apk assets/ai-knowledge
 zip -r build/app.apk assets/hangover
 zipalign -f 4 build/app.apk build/aligned.apk
 [ -f "$KS" ] || keytool -genkeypair -keystore "$KS" -storepass gassnative \

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.gass.gassnative" android:versionCode="11" android:versionName="0.5">
+    package="com.gass.gassnative" android:versionCode="13" android:versionName="0.7">
   <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="28"/>
   <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
   <application android:usesCleartextTraffic="true" android:name=".GassNativeApp" android:label="GassNative" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:extractNativeLibs="true" android:theme="@style/GassNativeTheme">
     <activity android:name=".HomeActivity" android:exported="true">
       <intent-filter>
@@ -21,6 +22,7 @@
     <activity android:name=".ProfileActivity" android:label="Profiles"/>
     <activity android:name=".SystemInfoActivity" android:label="System Information" android:exported="false"/>
     <activity android:name=".GPUSettingsActivity" android:label="GPU Settings" android:exported="false"/>
+    <activity android:name=".AiActivity" android:label="GassNative AI" android:exported="false"/>
     <activity android:name=".MusicActivity" android:label="GassNative Music" android:exported="false"/>
     <activity android:name=".AboutActivity" android:label="About"/>
         <activity android:name=".CrashReportsActivity" android:exported="false" />
@@ -28,8 +30,11 @@
     </activity>
     <activity android:name=".TvActivity" android:label="TV" android:exported="true" android:theme="@android:style/Theme.DeviceDefault.NoActionBar" android:configChanges="orientation|screenSize|keyboardHidden">
     </activity>
+    <activity android:name=".WindowsVmActivity" android:label="Windows 7 VM" android:exported="false"/>
     <activity android:name=".GamesActivity" android:label="Windows Games" android:exported="true" android:theme="@android:style/Theme.DeviceDefault.NoActionBar" android:configChanges="orientation|screenSize|keyboardHidden">
     </activity>
       <activity android:name=".TipsActivity" android:label="Useful tips" android:exported="false" android:theme="@android:style/Theme.DeviceDefault.NoActionBar"/>
+      <service android:name=".MediaService" android:exported="false"/>
+      <activity android:name=".DistroActivity" android:label="Choose Linux" android:exported="false" android:theme="@android:style/Theme.DeviceDefault.NoActionBar"/>
   </application>
 </manifest>

@@ -94,75 +94,44 @@ public class MusicActivity extends Activity {
     }
 
     private void releasePlayer() {
-        if (player != null) {
-            try { player.reset(); } catch (Exception ignored) {}
-            player.release();
-            player = null;
-        }
+        // MediaService owns playback. Closing this Activity must not stop music.
+        player = null;
     }
 
     private void load(int n, boolean autoplay) {
-        releasePlayer();
-
         index = (n + tracks.length) % tracks.length;
-        title.setText(titles[index]);
-        status.setText("Loading track " + (index + 1) + " of " + tracks.length);
-        play.setText("▶");
-        seek.setProgress(0);
-        elapsed.setText("0:00");
-        total.setText("0:00");
 
-        try {
-            MediaPlayer mp = new MediaPlayer();
-            player = mp;
-
-            mp.setAudioAttributes(new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build());
-
-            mp.setDataSource(cachedTrack(index).getAbsolutePath());
-
-            mp.setOnCompletionListener(done ->
-                load(index + 1, true));
-
-            mp.prepare();
-
-            seek.setMax(Math.max(1, mp.getDuration()));
-            total.setText(clock(mp.getDuration()));
-            status.setText("AYMEN PRODUCTION  •  OFFLINE MUSIC");
-
-            if (autoplay) {
-                mp.start();
-                play.setText("Ⅱ");
+        if (autoplay) {
+            MediaService.playPlaylist(this, tracks, titles, index);
+        } else if (MediaService.currentTitle != null) {
+            for (int i = 0; i < titles.length; i++) {
+                if (titles[i].equals(MediaService.currentTitle)) {
+                    index = i;
+                    break;
+                }
             }
-        } catch (Exception e) {
-            releasePlayer();
-            status.setText("Unable to play this track");
-            Toast.makeText(this, e.getMessage(),
-                Toast.LENGTH_LONG).show();
         }
+
+        title.setText(MediaService.currentTitle != null
+            ? MediaService.currentTitle : titles[index]);
+        status.setText(MediaService.isPlaying ? "Now playing"
+            : (MediaService.currentTitle != null ? "Paused"
+            : "AYMEN PRODUCTION  •  OFFLINE MUSIC"));
+        play.setText(MediaService.isPlaying ? "Ⅱ" : "▶");
+        seek.setMax(Math.max(1, MediaService.durationMs));
+        seek.setProgress(Math.max(0, MediaService.positionMs));
+        elapsed.setText(clock(Math.max(0, MediaService.positionMs)));
+        total.setText(clock(Math.max(0, MediaService.durationMs)));
     }
 
     private void toggle() {
-        if (player == null) {
-            load(index, true);
-            return;
+        if (MediaService.currentTitle == null) {
+            MediaService.playPlaylist(this, tracks, titles, index);
+        } else {
+            MediaService.toggle(this);
         }
-
-        try {
-            if (player.isPlaying()) {
-                player.pause();
-                play.setText("▶");
-                status.setText("Paused");
-            } else {
-                player.start();
-                play.setText("Ⅱ");
-                status.setText("Now playing");
-            }
-        } catch (Exception e) {
-            status.setText("Playback error");
-        }
+        status.setText(MediaService.isPlaying ? "Now playing" : "Paused");
+        play.setText(MediaService.isPlaying ? "Ⅱ" : "▶");
     }
 
     private Button control(String symbol, int color) {
@@ -177,14 +146,20 @@ public class MusicActivity extends Activity {
 
     private final Runnable progress = new Runnable() {
         @Override public void run() {
-            if (player != null) {
-                try {
-                    int position = player.getCurrentPosition();
-                    seek.setProgress(position);
-                    elapsed.setText(clock(position));
-                } catch (Exception ignored) {}
+            if (!isFinishing()) {
+                String current = MediaService.currentTitle;
+                if (current != null) {
+                    title.setText(current);
+                    status.setText(MediaService.isPlaying
+                        ? "Now playing" : "Paused");
+                    play.setText(MediaService.isPlaying ? "Ⅱ" : "▶");
+                    seek.setMax(Math.max(1, MediaService.durationMs));
+                    seek.setProgress(Math.max(0, MediaService.positionMs));
+                    elapsed.setText(clock(Math.max(0, MediaService.positionMs)));
+                    total.setText(clock(Math.max(0, MediaService.durationMs)));
+                }
+                handler.postDelayed(this, 500);
             }
-            handler.postDelayed(this, 500);
         }
     };
 
@@ -285,13 +260,10 @@ public class MusicActivity extends Activity {
             new SeekBar.OnSeekBarChangeListener() {
                 public void onStartTrackingTouch(SeekBar bar) {}
                 public void onProgressChanged(
-                    SeekBar bar, int value, boolean user) {
-                    if (user && player != null) {
-                        try { player.seekTo(value); }
-                        catch (Exception ignored) {}
-                    }
+                    SeekBar bar, int value, boolean user) {}
+                public void onStopTrackingTouch(SeekBar bar) {
+                    MediaService.seek(MusicActivity.this, bar.getProgress());
                 }
-                public void onStopTrackingTouch(SeekBar bar) {}
             });
 
         TextView playlist = label("YOUR MUSIC COLLECTION", 13, BLUE);
@@ -328,7 +300,6 @@ public class MusicActivity extends Activity {
     @Override
     protected void onDestroy() {
         handler.removeCallbacks(progress);
-        releasePlayer();
         super.onDestroy();
     }
 }

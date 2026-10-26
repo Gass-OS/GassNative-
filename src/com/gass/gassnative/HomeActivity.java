@@ -30,6 +30,17 @@ public class HomeActivity extends Activity {
     private TextView dayV, dateV;
     private GassUi.SecBar secBar;
     private View setupCard;
+    private TextView updDot, updTitle, updDetail;
+    private LinearLayout updCard;
+    private String updUrl;
+    private LinearLayout newsCard;
+    private TextView newsTitle, newsMsg, newsBtn;
+    private String newsUrl, newsId;
+    // GASS_SMART_BOX_V1
+    private TextView newsModeBtn;
+    private UpdateInfo.Result smartBoxResult;
+    private int smartBoxMode = 0;
+    private boolean smartBoxDismissed = false;
     private final Handler clock = new Handler(Looper.getMainLooper());
     private final Runnable tick = new Runnable() {
         @Override
@@ -124,6 +135,14 @@ public class HomeActivity extends Activity {
         head.addView(col, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(head);
 
+        // Dynamic Island: music playback and background tasks
+        IslandView islandView = new IslandView(this);
+        LinearLayout.LayoutParams islandLp =
+            new LinearLayout.LayoutParams(-1, -2);
+        islandLp.topMargin = dp(8);
+        islandLp.bottomMargin = dp(8);
+        root.addView(islandView, islandLp);
+
         LinearLayout clk = glass();
         clk.setOrientation(LinearLayout.VERTICAL);
         clk.setPadding(dp(18), dp(14), dp(18), dp(16));
@@ -162,60 +181,322 @@ public class HomeActivity extends Activity {
         setup.setOrientation(LinearLayout.VERTICAL);
         setup.setPadding(dp(16), dp(12), dp(16), dp(12));
         setup.addView(txt("FIRST-TIME SETUP", 11, 0xFFFDBA74, "sans-serif-medium", 0.12f));
-        TextView sb = txt("Open Terminal Debian to install Debian Desktop and Wine. It can take a while, so keep the app open. Then launch Linux from Debian Desktop.", 12.5f, WHITE, "sans-serif-light", 0);
+        TextView sb = txt("Tap here to choose the Linux system to install. Debian is available now, more are coming soon.", 12.5f, WHITE, "sans-serif-light", 0);
         sb.setPadding(0, dp(4), 0, 0);
         setup.addView(sb);
-        setup.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
+        setup.setOnClickListener(v -> startActivity(new Intent(this, DistroActivity.class)));
         setupCard = setup;
         root.addView(setup);
 
-        LinearLayout upd = card(0x1A34D399, 0x5534D399);
+        LinearLayout upd = card(0x1A94A3B8, 0x4494A3B8);
         upd.setGravity(Gravity.CENTER_VERTICAL);
-        upd.setPadding(dp(16), dp(10), dp(16), dp(10));
-        SpannableString ss = new SpannableString("\u25CF  You are on the latest version \u2014 new release coming soon");
-        ss.setSpan(new ForegroundColorSpan(0xFF34D399), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        TextView ut = txt("", 12.5f, WHITE, "sans-serif", 0);
-        ut.setText(ss);
-        upd.addView(ut);
+        upd.setPadding(dp(16), dp(12), dp(16), dp(12));
+        updDot = txt("\u25CF", 14, 0xFF94A3B8, "sans-serif", 0);
+        updDot.setPadding(0, 0, dp(10), 0);
+        upd.addView(updDot);
+        LinearLayout ucol = new LinearLayout(this);
+        ucol.setOrientation(LinearLayout.VERTICAL);
+        updTitle = txt("Checking for updates...", 13, WHITE, "sans-serif-medium", 0);
+        updDetail = txt("", 11.5f, SOFT, "sans-serif-light", 0);
+        updDetail.setVisibility(View.GONE);
+        ucol.addView(updTitle);
+        ucol.addView(updDetail);
+        upd.addView(ucol, new LinearLayout.LayoutParams(0, -2, 1));
+        updCard = upd;
+        upd.setOnClickListener(v -> {
+            if (updUrl != null) openUrl(updUrl);
+            else UpdateInfo.check(this, true, this::renderUpdate);
+        });
         root.addView(upd);
+
+        LinearLayout news = card(0x1A8B5CF6, 0x558B5CF6);
+        news.setOrientation(LinearLayout.VERTICAL);
+        news.setPadding(dp(16), dp(12), dp(16), dp(14));
+        LinearLayout nh = new LinearLayout(this);
+        nh.setGravity(Gravity.CENTER_VERTICAL);
+        newsTitle = txt("", 14, WHITE, "sans-serif-medium", 0);
+        nh.addView(newsTitle, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView nx = txt("\u2715", 15, SOFT, "sans-serif", 0);
+        nx.setPadding(dp(14), dp(2), dp(2), dp(2));
+        nx.setOnClickListener(v -> {
+            smartBoxDismissed = true;
+            if (newsId != null) {
+                getSharedPreferences("gass_news", MODE_PRIVATE)
+                    .edit().putString("seen", newsId).apply();
+            }
+            newsCard.setVisibility(View.GONE);
+        });
+        newsModeBtn = txt("↻  NEWS", 11, WHITE, "sans-serif-medium", 0);
+        newsModeBtn.setPadding(dp(10), dp(5), dp(10), dp(5));
+        newsModeBtn.setOnClickListener(v -> {
+            smartBoxMode = (smartBoxMode + 1) % 3;
+            renderSmartBox();
+        });
+        nh.addView(newsModeBtn);
+        nx.setContentDescription("Dismiss Smart Box");
+        nh.addView(nx);
+        news.addView(nh);
+        newsMsg = txt("", 12, SOFT, "sans-serif-light", 0);
+        newsMsg.setPadding(0, dp(4), 0, dp(10));
+        news.addView(newsMsg);
+        newsBtn = txt("", 12, WHITE, "sans-serif-medium", 0.04f);
+        GradientDrawable nb = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, new int[]{0xFF3B82F6, 0xFF8B5CF6});
+        nb.setCornerRadius(dp(16));
+        newsBtn.setBackground(nb);
+        newsBtn.setPadding(dp(16), dp(7), dp(16), dp(7));
+        newsBtn.setOnClickListener(v -> { if (newsUrl != null && newsUrl.length() > 0) openUrl(newsUrl); });
+        news.addView(newsBtn, new LinearLayout.LayoutParams(-2, -2));
+        news.setVisibility(View.GONE);
+        newsCard = news;
+        root.addView(news);
 
         LinearLayout grid = glass();
         grid.setOrientation(LinearLayout.VERTICAL);
         grid.setPadding(dp(6), dp(10), dp(6), dp(6));
         Object[][] T = {
-            {"TERMINAL DEBIAN", 0xFF174C48, 0xFF102C40, GassUi.TERMINAL, "term"},
-            {"DEBIAN DESKTOP", 0xFF263D83, 0xFF49316B, GassUi.DESKTOP, "desktop"},
-            {"SETTING & AUDIT", 0xFF39475E, 0xFF202B40, GassUi.SETTINGS, "settings"},
-            {"WINDOW GAMES", 0xFF164A7C, 0xFF233A70, GassUi.WINDOWS, "games"},
-            {"TELEVISION TV", 0xFF79294C, 0xFF48245D, GassUi.TV, "tv"},
-            {"RADIO CHANNELS", 0xFF784331, 0xFF59283A, GassUi.RADIO, "radio"},
-            {"OFFLINE MUSIC", 0xFF58347E, 0xFF702D58, GassUi.MUSIC, "music"},
+            {"TERMINAL", 0xFF174C48, 0xFF102C40, GassUi.TERMINAL, "term"},
+            {"DESKTOP", 0xFF263D83, 0xFF49316B, GassUi.DESKTOP, "desktop"},
+            {"SETTING", 0xFF39475E, 0xFF202B40, GassUi.SETTINGS, "settings"},
+            {"WINE DESKTOP", 0xFF713F65, 0xFF3B2455, GassUi.WINDOWS, "games"},
+            {"Windows VM", 0xFF185A8E, 0xFF263D83, GassUi.WINDOWS, "win7"},
+            {"TV & STREAMING", 0xFF79294C, 0xFF48245D, GassUi.TV, "tv"},
+            {"RADIO", 0xFF784331, 0xFF59283A, GassUi.RADIO, "radio"},
+            {"MUSIC PLAYER", 0xFF58347E, 0xFF702D58, GassUi.MUSIC, "music"},
             {"ABOUT ME", 0xFF174E70, 0xFF293B78, GassUi.INFO, "about"},
-            {"USEFUL TIPS", 0xFF175A66, 0xFF233D70, GassUi.BULB, "tips"},
-            {"COMING SOON", 0xFF803C32, 0xFF69233E, GassUi.PLANET, "ubuntu"},
+            {"TIPS & GUIDES", 0xFF175A66, 0xFF233D70, GassUi.BULB, "tips"},
+            {"GPS & MAPS", 0xFF167C73, 0xFF244A83, GassUi.INFO, "gps"},
             {"COMING SOON", 0xFF244E8B, 0xFF49316F, GassUi.SHIELD, "kali"},
-            {"POWER OFF", 0xFF792B46, 0xFF481D45, GassUi.POWER, "power"} };
-        for (int r = 0; r < 3; r++) {
+            {"POWER OFF", 0xFF792B46, 0xFF481D45, GassUi.POWER, "power"},
+            {"GASS AI", 0xFF194C65, 0xFF493080, GassUi.BULB, "ai"},
+            // GASS_LANGUAGE_TILE_V06
+            {"LANGUAGE", 0xFF176B78, 0xFF343A80, GassUi.INFO, "language"},
+    {"SUPPORT", 0xFF75522B, 0xFF49316F, GassUi.INFO, "support"} };
+        for (int r = 0; r < (T.length + 3) / 4; r++) {
             LinearLayout row = new LinearLayout(this);
             for (int c = 0; c < 4; c++) {
+                if (r * 4 + c >= T.length) {
+                    row.addView(new View(this),
+                        new LinearLayout.LayoutParams(0, 1, 1));
+                    continue;
+                }
                 Object[] it = T[r * 4 + c];
-                row.addView(tile((String) it[0], (Integer) it[1], (Integer) it[2], (Integer) it[3], (String) it[4]),
+                row.addView(tile(localizedTileLabel((String) it[0]), (Integer) it[1], (Integer) it[2], (Integer) it[3], (String) it[4]),
                     new LinearLayout.LayoutParams(0, -2, 1));
             }
             grid.addView(row);
         }
         root.addView(grid);
 
+        // GassNative-CrashReport
+        LinearLayout report = card(0x2629B6F6, 0x6648A9FF);
+        report.setOrientation(LinearLayout.VERTICAL);
+        report.setPadding(dp(16), dp(12), dp(16), dp(12));
+        report.addView(txt("BUG REPORT  •  TELEGRAM", 11,
+            0xFF8CCBFF, "sans-serif-medium", 0.08f));
+        TextView reportText = txt(
+            "App crashed or something is not working? Contact Gass-OS support on Telegram.",
+            12.5f, WHITE, "sans-serif", 0);
+        reportText.setPadding(0, dp(5), 0, 0);
+        report.addView(reportText);
+        report.setOnClickListener(v -> {
+            Intent telegram = new Intent(Intent.ACTION_VIEW,
+                android.net.Uri.parse("https://t.me/Gassos94"));
+            try {
+                startActivity(telegram);
+            } catch (Exception ignored) {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://telegram.me/Gassos94")));
+                } catch (Exception ignoredAgain) {}
+            }
+        });
+        root.addView(report);
+
+
         LinearLayout foot = glass();
         foot.setOrientation(LinearLayout.VERTICAL);
         foot.setPadding(dp(16), dp(12), dp(16), dp(12));
-        foot.addView(txt("GASSNATIVE PUMPKIN V0.5 \u2014 PRE-RELEASE APK\u2122", 11, WHITE, "sans-serif-medium", 0.04f));
+        foot.addView(txt("GASSNATIVE PUMPKIN V" + UpdateInfo.installed(this) + " \u2014 PRE-RELEASE APK\u2122", 11, WHITE, "sans-serif-medium", 0.04f));
         TextView fb = txt("No ads. No tracking. No telemetry. Your smartphone, your freedom. GassNative lets you run Linux operating systems on Android without root access. Your device belongs to you \u2014 as it should be. \uD83D\uDC99", 11, SOFT, "sans-serif-light", 0);
         fb.setPadding(0, dp(6), 0, 0);
         foot.addView(fb);
         root.addView(foot);
 
         GassUi.setContent(this, sv);
+        root.post(() -> showFirstLaunchSetup());
+        UpdateChecker.enforce(this);
+    }
+
+
+    private void showFirstLaunchSetup() {
+        android.content.SharedPreferences prefs =
+            getSharedPreferences("gassnative_first_launch", MODE_PRIVATE);
+        if (prefs.getBoolean("accepted", false)) return;
+
+        int panel = 0xFF101B30;
+        int border = 0xFF344765;
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(20), dp(18), dp(20), dp(16));
+        content.setBackground(box(panel, border, 22));
+
+        TextView title = txt("Welcome to GassNative 💙", 22,
+            WHITE, "sans-serif-medium", 0);
+        content.addView(title);
+
+        TextView subtitle = txt("PRIVACY & USER SETUP", 11,
+            0xFFA78BFA, "sans-serif-medium", 0.10f);
+        LinearLayout.LayoutParams subLp =
+            new LinearLayout.LayoutParams(-1, -2);
+        subLp.topMargin = dp(8);
+        content.addView(subtitle, subLp);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(false);
+        scroll.setVerticalScrollBarEnabled(false);
+
+        LinearLayout details = new LinearLayout(this);
+        details.setOrientation(LinearLayout.VERTICAL);
+
+        TextView privacy = txt(
+            "GassNative runs Linux environments on Android without root. " +
+            "The app is designed without ads, tracking, or telemetry. " +
+            "Linux distributions, repositories, and packages may have " +
+            "their own licenses, privacy practices, and network activity. " +
+            "Please review the terms of any software you install.",
+            13, WHITE, "sans-serif", 0);
+        privacy.setPadding(0, dp(12), 0, dp(12));
+        details.addView(privacy);
+
+        LinearLayout tips = card(0x2634D399, 0x6634D399);
+        tips.setOrientation(LinearLayout.VERTICAL);
+        tips.setPadding(dp(14), dp(12), dp(14), dp(12));
+
+        tips.addView(txt("💡 FIRST-TIME INSTALLATION TIPS",
+            12, 0xFF6EE7B7, "sans-serif-medium", 0));
+
+        TextView tipText = txt(
+            "1. Open Terminal Debian to install Debian, the desktop " +
+            "environment, required components, and Wine.\\n\\n" +
+            "2. Progress in the terminal may not display accurately. " +
+            "Be patient and do not close GassNative while installation runs.\\n\\n" +
+            "3. When setup finishes, check the Debian distribution name, " +
+            "Wine installation, and terminal readiness.\\n\\n" +
+            "4. Then open Debian Desktop 🖥️ from the home menu.",
+            12.5f, WHITE, "sans-serif", 0);
+        tipText.setPadding(0, dp(8), 0, 0);
+        tips.addView(tipText);
+        details.addView(tips);
+
+        scroll.addView(details);
+        LinearLayout.LayoutParams scrollLp =
+            new LinearLayout.LayoutParams(-1, 0, 1);
+        scrollLp.topMargin = dp(4);
+        content.addView(scroll, scrollLp);
+
+        CheckBox accept = new CheckBox(this);
+        accept.setText(
+            "I have read and accept the privacy notice and user agreement.");
+        accept.setTextColor(WHITE);
+        accept.setTextSize(12);
+        accept.setButtonTintList(
+            android.content.res.ColorStateList.valueOf(0xFFA78BFA));
+        accept.setPadding(0, dp(8), 0, dp(8));
+        content.addView(accept);
+
+        Button next = new Button(this);
+        next.setText("Accept & Next  →");
+        next.setTextColor(Color.WHITE);
+        next.setEnabled(false);
+        next.setBackground(box(0xFF6546C8, 0xFF9878F5, 16));
+        accept.setOnCheckedChangeListener((button, checked) ->
+            next.setEnabled(checked));
+
+        LinearLayout.LayoutParams nextLp =
+            new LinearLayout.LayoutParams(-1, dp(50));
+        nextLp.topMargin = dp(4);
+        content.addView(next, nextLp);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setView(content)
+            .create();
+
+        next.setOnClickListener(v -> {
+            if (!accept.isChecked()) return;
+            prefs.edit().putBoolean("accepted", true).apply();
+            dialog.dismiss();
+        });
+
+        dialog.setOnShowListener(d -> {
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(
+                    android.R.color.transparent);
+            }
+        });
+        dialog.show();
+    }
+
+
+    private String localizedTileLabel(String label) {
+        String lang = getSharedPreferences(
+            "gassnative_language", MODE_PRIVATE).getString("language", "en");
+
+        if ("fr".equals(lang)) {
+            if (label.equals("DEBIAN TERMINAL")) return "TERMINAL DEBIAN";
+            if (label.equals("DEBIAN DESKTOP")) return "BUREAU DEBIAN";
+            if (label.equals("SETTINGS & AUDIT")) return "PARAMÈTRES & AUDIT";
+            if (label.equals("WINE DESKTOP")) return "BUREAU WINE";
+            if (label.equals("TV & STREAMING")) return "TV & STREAMING";
+            if (label.equals("RADIO")) return "RADIO";
+            if (label.equals("MUSIC PLAYER")) return "LECTEUR MUSICAL";
+            if (label.equals("ABOUT ME")) return "À PROPOS";
+            if (label.equals("TIPS & GUIDES")) return "CONSEILS & GUIDES";
+            if (label.equals("COMING SOON")) return "BIENTÔT";
+            if (label.equals("POWER OFF")) return "ÉTEINDRE";
+            if (label.equals("GASS AI")) return "IA GASS";
+            if (label.equals("LANGUAGE")) return "LANGUE";
+        } else if ("ar".equals(lang)) {
+            if (label.equals("DEBIAN TERMINAL")) return "طرفية ديبيان";
+            if (label.equals("DEBIAN DESKTOP")) return "سطح مكتب ديبيان";
+            if (label.equals("SETTINGS & AUDIT")) return "الإعدادات والتدقيق";
+            if (label.equals("WINE DESKTOP")) return "سطح مكتب واين";
+            if (label.equals("TV & STREAMING")) return "التلفاز والبث";
+            if (label.equals("RADIO")) return "الراديو";
+            if (label.equals("MUSIC PLAYER")) return "مشغل الموسيقى";
+            if (label.equals("ABOUT ME")) return "من أنا";
+            if (label.equals("TIPS & GUIDES")) return "نصائح وإرشادات";
+            if (label.equals("COMING SOON")) return "قريباً";
+            if (label.equals("POWER OFF")) return "إيقاف التشغيل";
+            if (label.equals("GASS AI")) return "مساعد GASS";
+            if (label.equals("LANGUAGE")) return "اللغة";
+        }
+        return label;
+    }
+
+    private void showLanguageDialog() {
+        final String[] codes = {"en", "fr", "ar"};
+        String current = getSharedPreferences(
+            "gassnative_language", MODE_PRIVATE).getString("language", "en");
+        int selected = 0;
+        for (int i = 0; i < codes.length; i++) {
+            if (codes[i].equals(current)) selected = i;
+        }
+
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Language / Langue / اللغة")
+            .setSingleChoiceItems(
+                new String[] {"🇬🇧 English", "🇫🇷 Français", "🇸🇦 العربية"},
+                selected,
+                (dialog, which) -> {
+                    getSharedPreferences(
+                        "gassnative_language", MODE_PRIVATE)
+                        .edit().putString("language", codes[which]).apply();
+                    dialog.dismiss();
+                    recreate();
+                })
+            .setNegativeButton("Cancel / Annuler / إلغاء", null)
+            .show();
     }
 
     private View tile(String label, int c1, int c2, int glyph, final String code) {
@@ -225,8 +506,35 @@ public class HomeActivity extends Activity {
         t.setPadding(dp(2), dp(4), dp(2), dp(10));
         FrameLayout f = new FrameLayout(this);
         f.addView(new GassUi.GlowTile(this, c1, c2, true), new FrameLayout.LayoutParams(-1, -1));
-        f.addView(new GassUi.PapirusIcon(this, glyph),
-            new FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER));
+        if ("games".equals(code)) {
+            TextView wine = txt("🍷", 31, WHITE, "sans-serif", 0);
+            wine.setGravity(Gravity.CENTER);
+            f.addView(wine, new FrameLayout.LayoutParams(
+                dp(48), dp(48), Gravity.CENTER));
+        } else if ("ai".equals(code)) {
+            TextView robot = txt("🤖", 31, WHITE, "sans-serif", 0);
+            robot.setGravity(Gravity.CENTER);
+            f.addView(robot, new FrameLayout.LayoutParams(
+                dp(48), dp(48), Gravity.CENTER));
+        } else if ("gps".equals(code)) {
+            TextView gps = txt("📍", 31, WHITE, "sans-serif", 0);
+            gps.setGravity(Gravity.CENTER);
+            f.addView(gps, new FrameLayout.LayoutParams(
+                dp(48), dp(48), Gravity.CENTER));
+        } else if ("language".equals(code)) {
+            TextView language = txt("🌐", 29, WHITE, "sans-serif", 0);
+            language.setGravity(Gravity.CENTER);
+            f.addView(language, new FrameLayout.LayoutParams(
+                dp(48), dp(48), Gravity.CENTER));
+        } else if ("support".equals(code)) {
+            TextView coffee = txt("☕", 31, WHITE, "sans-serif", 0);
+            coffee.setGravity(Gravity.CENTER);
+            f.addView(coffee, new FrameLayout.LayoutParams(
+                dp(48), dp(48), Gravity.CENTER));
+        } else {
+            f.addView(new GassUi.PapirusIcon(this, glyph),
+                new FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER));
+        }
         t.addView(f, new LinearLayout.LayoutParams(dp(82), dp(82)));
         TextView l = txt(label, 10.5f, WHITE, "sans-serif-medium", 0.05f);
         l.setGravity(Gravity.CENTER);
@@ -238,8 +546,361 @@ public class HomeActivity extends Activity {
             else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
             return false;
         });
-        t.setOnClickListener(v -> go(code));
+        t.setOnClickListener(v -> {
+            if ("language".equals(code)) showLanguageDialog();
+            else go(code);
+        });
+        t.setOnLongClickListener(v -> {
+            showTileDetails(label, code);
+            return true;
+        });
+        t.setLongClickable(true);
         return t;
+    }
+
+    private void showTileDetails(String label, String code) {
+        String description;
+        String tip;
+        String action;
+
+        switch (code) {
+            case "term":
+                description = "Your Linux installation and maintenance terminal.";
+                tip = "FIRST INSTALLATION\\nInstall Debian, the desktop components and Wine when prompted. " +
+                    "Installation can take several minutes. Keep GassNative open and wait for completion.";
+                action = "Open Terminal Debian to continue setup.";
+                break;
+            case "desktop":
+                description = "Launch your XFCE Linux desktop directly on Android.";
+                tip = "Make sure Debian installation has finished first. " +
+                    "If the desktop does not start, check the terminal output and desktop settings.";
+                action = "Install Debian first if this is your first run.";
+                break;
+            case "settings":
+                description = "Manage the configuration of your GassNative environment.";
+                tip = "Review DNS, display resolution, bind mounts and environment variables. " +
+                    "Change settings carefully because they can affect applications inside Linux.";
+                action = "Open Settings to review available options.";
+                break;
+            case "games":
+                description = "Explore the Windows application launcher and supported runtime.";
+                tip = "Windows compatibility varies by application. Wine or Hangover support " +
+                    "does not guarantee that every program or game will work or use GPU acceleration.";
+                action = "Check the runtime setup before launching an application.";
+                break;
+            case "tv":
+                description = "Open the television section.";
+                tip = "Available streams depend on their source, availability and network connection.";
+                action = "Tap to browse the TV section.";
+                break;
+            case "radio":
+                description = "Browse available radio stations.";
+                tip = "Online stations need an internet connection. Stream availability may change.";
+                action = "Tap to open radio.";
+                break;
+            case "music":
+                description = "Open the music player for available audio files.";
+                tip = "Choose audio files you can access on your device.";
+                action = "Tap to open offline music.";
+                break;
+            case "about":
+                description = "Discover GassNative and its developer.";
+                tip = "GassNative aims to bring Linux environments to Android without root access.";
+                action = "Open About Me for project information.";
+                break;
+            case "tips":
+                description = "Read useful guidance for using GassNative.";
+                tip = "Complete the initial setup, wait for installation to finish, " +
+                    "then launch Debian Desktop. Keep enough free storage for packages and updates.";
+                action = "Tap to open the full Tips section.";
+                break;
+            case "ubuntu":
+                description = "Ubuntu support is planned for a future release.";
+                tip = "This shortcut is not active yet.";
+                action = "Check future GassNative releases.";
+                break;
+            case "kali":
+                description = "Kali Linux support is planned for a future release.";
+                tip = "This shortcut is not active yet.";
+                action = "Check future GassNative releases.";
+                break;
+            case "power":
+                description = "Close GassNative and stop the current desktop session.";
+                tip = "Save your work first. Closing the session may stop running Linux applications.";
+                action = "Use the normal tap action only when you are ready to exit.";
+                break;
+            default:
+                description = "GassNative home-screen feature.";
+                tip = "Use the tile's normal tap action to open it.";
+                action = "Tap to continue.";
+                break;
+        }
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(18), dp(18), dp(16));
+        content.setBackground(box(0xFF101B30, 0xFF344765, 22));
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(false);
+        scroll.setVerticalScrollBarEnabled(false);
+        scroll.addView(content);
+
+        TextView heading = txt("ⓘ  " + label, 20, WHITE,
+            "sans-serif-medium", 0);
+        content.addView(heading);
+
+        TextView intro = txt(description, 13.5f, SOFT,
+            "sans-serif", 0);
+        intro.setPadding(0, dp(8), 0, dp(14));
+        content.addView(intro);
+
+        LinearLayout status = card(0x222F80ED, 0x554F8FEF);
+        status.setOrientation(LinearLayout.VERTICAL);
+        status.setPadding(dp(13), dp(12), dp(13), dp(12));
+        status.addView(txt("⚡ SMART SYSTEM STATUS", 11,
+            0xFF80BFFF, "sans-serif-medium", 0.05f));
+
+        boolean ready = debianReady();
+        TextView state = txt(
+            (ready ? "● Debian root filesystem detected" :
+                     "● Debian installation required") +
+            "\\n" + (ready
+                ? "Bash is present. This does not confirm that XFCE, Wine or GPU acceleration is ready."
+                : "Open Terminal Debian to install the Linux environment."),
+            12, WHITE, "sans-serif", 0);
+        state.setPadding(0, dp(7), 0, 0);
+        status.addView(state);
+        content.addView(status);
+
+        LinearLayout tipCard = card(0x2634D399, 0x6634D399);
+        tipCard.setOrientation(LinearLayout.VERTICAL);
+        tipCard.setPadding(dp(13), dp(12), dp(13), dp(12));
+
+        tipCard.addView(txt("💡 DETAILS & TIPS", 11,
+            0xFF6EE7B7, "sans-serif-medium", 0.06f));
+        TextView tipBody = txt(tip, 12.5f, WHITE, "sans-serif", 0);
+        tipBody.setPadding(0, dp(8), 0, dp(8));
+        tipCard.addView(tipBody);
+        tipCard.addView(txt("NEXT STEP", 10, 0xFF6EE7B7,
+            "sans-serif-medium", 0.08f));
+        TextView nextStep = txt(action, 12, SOFT, "sans-serif", 0);
+        nextStep.setPadding(0, dp(5), 0, 0);
+        tipCard.addView(nextStep);
+        content.addView(tipCard);
+
+        TextView linksTitle = txt("🌐 PROJECT & RESOURCES", 11,
+            0xFFA78BFA, "sans-serif-medium", 0.06f);
+        LinearLayout.LayoutParams titleLp =
+            new LinearLayout.LayoutParams(-1, -2);
+        titleLp.topMargin = dp(15);
+        titleLp.bottomMargin = dp(8);
+        content.addView(linksTitle, titleLp);
+
+        addDetailLink(content, "⌘", "Gass-OS on GitHub",
+            "Explore the open-source project", "https://github.com/Gass-OS");
+        addDetailLink(content, "🖥", "GNOME-Termux",
+            "Explore the related desktop project",
+            "https://github.com/Gass-OS/GNOME-Termux");
+
+        LinearLayout credits = new LinearLayout(this);
+        credits.setOrientation(LinearLayout.VERTICAL);
+        credits.setGravity(Gravity.CENTER);
+        credits.setPadding(dp(8), dp(16), dp(8), dp(4));
+        TextView powered = txt("POWERED BY", 10, SOFT,
+            "sans-serif-medium", 0.16f);
+        powered.setGravity(Gravity.CENTER);
+        credits.addView(powered);
+
+        TextView developer = txt("Aymen Gharsalli", 17, WHITE,
+            "sans-serif-medium", 0);
+        developer.setGravity(Gravity.CENTER);
+        credits.addView(developer);
+
+        TextView project = txt("Gass-OS Project  •  Linux on Android",
+            11, 0xFFA78BFA, "sans-serif", 0);
+        project.setGravity(Gravity.CENTER);
+        credits.addView(project);
+        content.addView(credits);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setView(scroll)
+            .setPositiveButton("Got it", null)
+            .create();
+
+        dialog.setOnShowListener(d -> {
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(
+                    android.R.color.transparent);
+            }
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(0xFFA78BFA);
+        });
+        dialog.show();
+    }
+
+    private void addDetailLink(LinearLayout parent, String symbol,
+            String title, String subtitle, String url) {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.HORIZONTAL);
+        item.setGravity(Gravity.CENTER_VERTICAL);
+        item.setPadding(dp(12), dp(10), dp(12), dp(10));
+        item.setBackground(box(0x22243B5A, 0x445E789E, 16));
+        item.setClickable(true);
+        item.setFocusable(true);
+
+        TextView icon = txt(symbol, 21, 0xFF80BFFF,
+            "sans-serif-medium", 0);
+        icon.setGravity(Gravity.CENTER);
+        item.addView(icon, new LinearLayout.LayoutParams(dp(38), dp(42)));
+
+        LinearLayout labels = new LinearLayout(this);
+        labels.setOrientation(LinearLayout.VERTICAL);
+        labels.setPadding(dp(9), 0, dp(4), 0);
+        labels.addView(txt(title, 13, WHITE, "sans-serif-medium", 0));
+        TextView sub = txt(subtitle, 11, SOFT, "sans-serif", 0);
+        LinearLayout.LayoutParams subLp =
+            new LinearLayout.LayoutParams(-1, -2);
+        subLp.topMargin = dp(3);
+        labels.addView(sub, subLp);
+        item.addView(labels, new LinearLayout.LayoutParams(0, -2, 1));
+        item.addView(txt("↗", 18, 0xFFA78BFA, "sans-serif-medium", 0));
+
+        LinearLayout.LayoutParams itemLp =
+            new LinearLayout.LayoutParams(-1, -2);
+        itemLp.bottomMargin = dp(7);
+        parent.addView(item, itemLp);
+
+        item.setOnTouchListener((v, event) -> {
+            int a = event.getActionMasked();
+            if (a == MotionEvent.ACTION_DOWN) {
+                v.animate().scaleX(0.98f).scaleY(0.98f)
+                    .setDuration(70).start();
+            } else if (a == MotionEvent.ACTION_UP ||
+                       a == MotionEvent.ACTION_CANCEL) {
+                v.animate().scaleX(1f).scaleY(1f)
+                    .setDuration(100).start();
+            }
+            return false;
+        });
+
+        item.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW,
+                    android.net.Uri.parse(url)));
+            } catch (Exception e) {
+                Toast.makeText(this, "Unable to open link",
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void openUrl(String u) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(u)));
+        } catch (Exception e) {
+            Toast.makeText(this, "No browser found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void renderUpdate(UpdateInfo.Result r) {
+        int dot = 0xFF94A3B8, fill = 0x1A94A3B8, line = 0x4494A3B8;
+        String title;
+        String detail = null;
+        updUrl = null;
+        String me = "v" + r.installed + " (build " + r.installedCode + ")";
+        if (r.state == 1) {
+            dot = 0xFF34D399; fill = 0x1A34D399; line = 0x5534D399;
+            title = "Up to date \u2014 " + me;
+            detail = r.notes != null && r.notes.length() > 0 ? r.notes : null;
+        } else if (r.state == 2) {
+            dot = 0xFFFBBF24; fill = 0x26FBBF24; line = 0x66FBBF24;
+            title = "Update available: " + r.latest;
+            detail = (r.notes != null && r.notes.length() > 0 ? r.notes + "\n" : "") + "You have " + me + ". Tap to download.";
+            updUrl = r.url;
+        } else {
+            title = "Couldn't check for updates \u2014 " + me;
+            detail = "Tap to try again";
+        }
+        updDot.setTextColor(dot);
+        updCard.setBackground(box(fill, line, 24));
+        updTitle.setText(title);
+        if (detail == null) {
+            updDetail.setVisibility(View.GONE);
+        } else {
+            updDetail.setText(detail);
+            updDetail.setVisibility(View.VISIBLE);
+        }
+        smartBoxResult = r;
+        renderSmartBox();
+    }
+
+    // GASS_SMART_BOX_V1: offline content plus the existing online news feed.
+    private void renderSmartBox() {
+        if (newsCard == null || newsTitle == null) return;
+
+        newsCard.setVisibility(smartBoxDismissed ? View.GONE : View.VISIBLE);
+        if (smartBoxDismissed) return;
+
+        newsUrl = null;
+        String title;
+        String message;
+        String action = "";
+        boolean hasOnlineNews = smartBoxResult != null
+            && smartBoxResult.newsId != null
+            && smartBoxResult.newsId.length() > 0
+            && smartBoxResult.newsTitle != null
+            && smartBoxResult.newsTitle.length() > 0
+            && !smartBoxResult.newsId.equals(
+                getSharedPreferences("gass_news", MODE_PRIVATE)
+                    .getString("seen", ""));
+
+        if (smartBoxMode == 0 && hasOnlineNews) {
+            title = "📰  " + smartBoxResult.newsTitle;
+            message = smartBoxResult.newsMsg == null
+                ? "Latest news from GassNative."
+                : smartBoxResult.newsMsg;
+            newsUrl = smartBoxResult.newsUrl;
+            action = smartBoxResult.newsBtn == null
+                || smartBoxResult.newsBtn.length() == 0
+                ? "Read more"
+                : smartBoxResult.newsBtn;
+            newsId = smartBoxResult.newsId;
+        } else if (smartBoxMode == 0) {
+            title = "✨  GASS AI · SMART BOX";
+            message = "Online headlines appear here when the news feed provides them. Tap ↻ to explore jokes and helpful tips.";
+        } else if (smartBoxMode == 1) {
+            String[] jokes = {
+                "Why do programmers prefer dark mode? Because light attracts bugs. 🐛",
+                "A Linux user walks into a bar, orders sudo juice. 🍹",
+                "There are 10 kinds of people: those who understand binary and those who don't. 😄",
+                "My computer needed a break. Too many open windows! 🪟",
+                "Keep calm and let the terminal handle it. 😎"
+            };
+            int index = (int) ((System.currentTimeMillis() / 60000L) % jokes.length);
+            title = "😂  GASS AI · JOKE OF THE MOMENT";
+            message = jokes[index];
+        } else {
+            String[] tips = {
+                "🆘 EMERGENCY: If someone is in immediate danger, contact your local emergency services.",
+                "🛠️ GASS TIP: Back up important Linux files before changing system configuration.",
+                "🔐 SECURITY: Never share passwords, API secret keys, or private credentials.",
+                "📦 INSTALL TIP: If Debian installation fails, check free storage and the error log before retrying.",
+                "🌡️ DEVICE TIP: Close demanding apps and let your phone cool down if it overheats."
+            };
+            int index = (int) ((System.currentTimeMillis() / 60000L) % tips.length);
+            title = "🆘  GASS AI · SOS & SMART TIPS";
+            message = tips[index];
+        }
+
+        newsTitle.setText(title);
+        newsMsg.setText(message);
+        newsModeBtn.setText(smartBoxMode == 0 ? "↻  NEWS"
+            : smartBoxMode == 1 ? "↻  JOKE" : "↻  SOS");
+
+        newsBtn.setText(action.length() > 0 ? action : "Explore GASS AI");
+        newsBtn.setVisibility(newsUrl != null && newsUrl.length() > 0
+            ? View.VISIBLE : View.GONE);
     }
 
     private boolean debianReady() {
@@ -248,26 +909,36 @@ public class HomeActivity extends Activity {
 
     private void needDebian(Class<?> c) {
         if (!debianReady()) {
-            Toast.makeText(this, "Install Debian first: open Terminal Debian", Toast.LENGTH_LONG).show();
-            startActivity(new Intent(this, MainActivity.class));
+            Toast.makeText(this, "Install a Linux system first", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(this, DistroActivity.class));
             return;
         }
         startActivity(new Intent(this, c));
     }
 
     private void go(String c) {
+        if ("gps".equals(c)) {
+            openUrl("https://www.google.com/maps");
+            return;
+        }
+        if ("support".equals(c)) {
+            openUrl("https://www.paypal.com/ncp/payment/TERMUCF6CWCRA");
+            return;
+        }
         switch (c) {
             case "term": startActivity(new Intent(this, MainActivity.class)); break;
             case "desktop": needDebian(DesktopActivity.class); break;
             case "settings": startActivity(new Intent(this, SettingsActivity.class)); break;
             case "games": needDebian(GamesActivity.class); break;
+            case "win7": startActivity(new Intent(this, WindowsVmActivity.class)); break;
             case "tv": startActivity(new Intent(this, TvActivity.class)); break;
             case "radio": startActivity(new Intent(this, RadioActivity.class)); break;
             case "music": startActivity(new Intent(this, MusicActivity.class)); break;
+            case "ai": startActivity(new Intent(this, AiActivity.class)); break;
             case "about": startActivity(new Intent(this, AboutActivity.class)); break;
             case "tips": startActivity(new Intent(this, TipsActivity.class)); break;
-            case "ubuntu": Toast.makeText(this, "Ubuntu is coming soon", Toast.LENGTH_SHORT).show(); break;
-            case "kali": Toast.makeText(this, "Kali Linux is coming soon", Toast.LENGTH_SHORT).show(); break;
+            case "ubuntu": startActivity(new Intent(this, DistroActivity.class)); break;
+            case "kali": startActivity(new Intent(this, DistroActivity.class)); break;
             case "power": powerOff(); break;
         }
     }
@@ -288,6 +959,7 @@ public class HomeActivity extends Activity {
     protected void onResume() {
         super.onResume();
         setupCard.setVisibility(debianReady() ? View.GONE : View.VISIBLE);
+        UpdateInfo.check(this, false, this::renderUpdate);
         clock.removeCallbacks(tick);
         clock.post(tick);
     }

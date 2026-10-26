@@ -92,7 +92,10 @@ public class GamesActivity extends Activity {
 
     private void launch(String cmd) {
         Intent i = new Intent(this, DesktopActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         i.putExtra("autorun", cmd);
         startActivity(i);
+        Toast.makeText(this, "Sending Wine command to the Linux desktop…",
+            Toast.LENGTH_SHORT).show();
     }
 }

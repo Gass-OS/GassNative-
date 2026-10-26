@@ -628,6 +628,67 @@ public class MainActivity extends Activity {
     debian(script);
   }
 
+
+  void stageDxvkIfNeeded() throws Exception {
+    File dxgi = new File(root,
+        "opt/gassnative/dxvk-v2.7.1/arm64ec/dxgi.dll");
+    if (dxgi.isFile() && dxgi.length() > 0) {
+      log("GASS-DXVK: Bundled DXVK files already staged.\\n");
+      return;
+    }
+
+    copyBundledHangoverArchive();
+    String script =
+        "set -eu\n" +
+        "mkdir -p /opt/gassnative\n" +
+        "test -s /tmp/gass-hangover.tar\n" +
+        "tar -xOf /tmp/gass-hangover.tar dxvk-v2.7.1.tar.gz > /tmp/gass-dxvk.tar.gz\n" +
+        "tar -tzf /tmp/gass-dxvk.tar.gz | grep -q '^dxvk-v2.7.1/arm64ec/dxgi.dll$'\n" +
+        "tar -xzf /tmp/gass-dxvk.tar.gz -C /opt/gassnative\n" +
+        "test -s /opt/gassnative/dxvk-v2.7.1/arm64ec/dxgi.dll\n" +
+        "test -s /opt/gassnative/dxvk-v2.7.1/aarch64/dxgi.dll\n" +
+        "rm -f /tmp/gass-dxvk.tar.gz /tmp/gass-hangover.tar\n" +
+        "echo 'GASS-DXVK: DXVK 2.7.1 staged; not yet enabled.'\n";
+    debian(script);
+  }
+
+
+  void installQemuIfNeeded() throws Exception {
+    File marker = new File(root, "var/lib/gassnative-qemu-v1.done");
+
+    if (marker.isFile()) {
+      log("GASS-QEMU: Already installed.\n");
+      return;
+    }
+
+    log("GASS-QEMU: Installing x86/x86-64 emulation...\n");
+
+    String script =
+        "set -eu\n" +
+        "export DEBIAN_FRONTEND=noninteractive\n" +
+        "echo 'GASS-QEMU Updating APT repositories...'\n" +
+        "apt-get update --error-on=any\n" +
+        "dpkg --configure -a\n" +
+        "apt-get install -y qemu-system-x86 qemu-utils qemu-system-gui\n" +
+        "echo 'GASS-QEMU Verifying binaries...'\n" +
+        "command -v qemu-system-i386\n" +
+        "command -v qemu-system-x86_64\n" +
+        "command -v qemu-img\n" +
+        "qemu-system-i386 --version\n" +
+        "qemu-system-x86_64 --version\n" +
+        "qemu-img --version\n" +
+        "mkdir -p /var/lib\n" +
+        "touch /var/lib/gassnative-qemu-v1.done\n" +
+        "echo 'GASS-QEMU Installation completed.'\n";
+
+    debian(script);
+
+    if (!marker.isFile())
+      throw new IOException("QEMU installation did not complete.");
+
+    log("GASS-QEMU: x86/x86-64 emulator ready.\n");
+  }
+
   void installDesktopPackagesIfNeeded() throws Exception {
     // Ensure the desktop account exists even when desktop packages
     // were installed by an earlier version of GassNative.
@@ -643,6 +704,8 @@ public class MainActivity extends Activity {
         "echo 'GASS-SETUP Desktop account verified.'\n");
 
     installWindowsRuntimeIfNeeded();
+    stageDxvkIfNeeded();
+    installQemuIfNeeded();
 
     File marker = new File(root,
         "var/lib/gassnative-desktop-setup-v1.done");
@@ -665,7 +728,7 @@ public class MainActivity extends Activity {
         "echo 'GASS-SETUP Upgrading Debian...'\n" +
         "apt-get -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade\n" +
         "echo 'GASS-SETUP Installing XFCE4 and applications...'\n" +
-        "apt-get install -y git wget tar nano sudo file man-db bash-completion dialog locales xorg xwayland x11-xserver-utils x11-utils xauth xclip dbus dbus-x11 libx11-6 libx11-xcb1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libwayland-client0 libwayland-cursor0 libwayland-egl1 mesa-utils mesa-vulkan-drivers libvulkan1 vulkan-tools pulseaudio xfce4 xfce4-settings xfce4-goodies xfce4-terminal vlc firefox-esr w3m kitty feh chafa fortune-mod gimp mpv\n" +
+        "apt-get install -y git wget tar nano sudo file man-db bash-completion dialog locales qemu-system-x86 qemu-utils qemu-system-gui xorg xwayland x11-xserver-utils x11-utils xauth xclip dbus dbus-x11 libx11-6 libx11-xcb1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libwayland-client0 libwayland-cursor0 libwayland-egl1 mesa-utils mesa-vulkan-drivers libvulkan1 vulkan-tools pulseaudio xfce4 xfce4-settings xfce4-goodies xfce4-terminal vlc firefox-esr w3m kitty feh chafa fortune-mod gimp mpv\n" +
         "for p in fastfetch lsd hardinfo2 freetuxtv; do\n" +
         "  if apt-cache show \"$p\" >/dev/null 2>&1; then\n" +
         "    apt-get install -y \"$p\" || echo \"Optional package failed: $p\"\n" +

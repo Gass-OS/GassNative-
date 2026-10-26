@@ -1,15 +1,15 @@
 {
-  "versionCode": 11,
-  "versionName": "0.5",
+  "versionCode": 13,
+  "versionName": "0.7",
   "downloadUrl": "https://github.com/Gass-OS/GassNative-/releases/latest",
-  "releaseNotes": "GassNative 0.5 Build 11: colorful Papirus-inspired icons, updated interface, and desktop improvements.",
+  "releaseNotes": "GassNative v0.7 Build 13: refreshed interface, AI help, Linux distribution selection, media improvements, and desktop updates.",
   "news": [
     {
       "id": "gassnative-welcome-2026-10",
-      "title": "GassNative 0.5 is here!",
-      "message": "Explore colorful new icons, a refreshed interface, and improved Linux desktop features.",
+      "title": "GassNative v0.7 is here!",
+      "message": "Discover AI help, Linux distribution selection, and the latest interface and desktop improvements.",
       "buttonText": "Read release notes",
-      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.5-build11"
+      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.7-build13"
     }
   ]
 }

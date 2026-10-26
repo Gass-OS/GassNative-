@@ -22,7 +22,9 @@ public class RadioActivity extends Activity {
     private TextView status, now;
     private EditText search;
     private FrameLayout toggle;
-    private MediaPlayer mp;
+    private final Runnable syncR = new Runnable() {
+        @Override public void run() { sync(); }
+    };
     private String[] current;
     private final ArrayList<TextView> chips = new ArrayList<>();
 
@@ -91,7 +93,7 @@ public class RadioActivity extends Activity {
         now.setSingleLine(true);
         bar.addView(now, new LinearLayout.LayoutParams(0, -2, 1));
         toggle = GassUi.iconButton(this, GassUi.PLAY, 48, v -> {
-            if (mp != null) stopPlayer(); else if (current != null) play(current);
+            if (Island.musicPlaying) MediaService.toggle(this); else if (current != null) play(current);
         });
         bar.addView(toggle, new LinearLayout.LayoutParams(GassUi.dp(this, 48), GassUi.dp(this, 48)));
         root.addView(bar);
@@ -148,35 +150,36 @@ public class RadioActivity extends Activity {
     }
 
     private void play(final String[] s) {
-        stopPlayer();
         current = s;
         now.setText("Connecting: " + s[0]);
-        try {
-            mp = new MediaPlayer();
-            mp.setAudioAttributes(new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
-            mp.setDataSource(s[1]);
-            mp.setOnPreparedListener(m -> { m.start(); now.setText(s[0]); });
-            mp.setOnErrorListener((m, w, x) -> { now.setText("Unavailable: " + s[0]); stopPlayer(); return true; });
-            mp.prepareAsync();
-            ((GassUi.Icon) toggle.getTag()).setType(GassUi.STOP);
-        } catch (Exception e) {
-            now.setText("Error: " + e.getMessage());
-            stopPlayer();
-        }
+        MediaService.play(this, s[1], s[0], "RadioActivity");
     }
 
     private void stopPlayer() {
-        if (mp != null) {
-            try { mp.release(); } catch (Exception ignored) {}
-            mp = null;
-        }
-        ((GassUi.Icon) toggle.getTag()).setType(GassUi.PLAY);
+        MediaService.stop(this);
+    }
+
+    private void sync() {
+        boolean on = Island.musicPlaying && "RadioActivity".equals(Island.musicTarget);
+        ((GassUi.Icon) toggle.getTag()).setType(on ? GassUi.PAUSE : GassUi.PLAY);
+        if ("RadioActivity".equals(Island.musicTarget) && Island.musicTitle != null) now.setText(Island.musicTitle);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Island.addListener(syncR);
+        sync();
+    }
+
+    @Override
+    protected void onPause() {
+        Island.removeListener(syncR);
+        super.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        stopPlayer();
         super.onDestroy();
     }
 }

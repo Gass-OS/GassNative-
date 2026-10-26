@@ -62,12 +62,16 @@ private volatile boolean desktopIntroCancelled;
         });
     }
 
+    private String pendingX11Command;
+
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
 
         root = Cfg.rootDir(this); instance = this;
-        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 21", android.widget.Toast.LENGTH_SHORT).show();
+        pendingX11Command = getIntent() == null ? null : getIntent().getStringExtra("x11_command");
+        writeAutorun(getIntent());
+        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 25", android.widget.Toast.LENGTH_SHORT).show();
         nativeDir = getApplicationInfo().nativeLibraryDir;
         runDir = new File(getFilesDir(), "run");
         runDir.mkdirs(); new File(getCacheDir(),"dnc").mkdirs(); new File(getCacheDir(),"proot").mkdirs();
@@ -318,7 +322,7 @@ rootRef = rootView; setContentView(rootView);
         hideSystemUi();
     }
 
-    private static final String GASS_SESSION = "#!/bin/bash\nexport DISPLAY=:1 XDG_SESSION_TYPE=x11 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb\nexport XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_ENABLE_WAYLAND=0\n(exec 3<>/dev/tcp/127.0.0.1/4713) 2>/dev/null && export PULSE_SERVER=127.0.0.1\nexport TU_DEBUG=noconform MESA_NO_ERROR=1 vblank_mode=0 mesa_glthread=true MESA_VK_WSI_PRESENT_MODE=mailbox\nICD=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json\nXM=$(cat /tmp/gass-xmode 2>/dev/null || echo shm)\nCACHE=$HOME/.gass-gpu-$XM\nPREF=GASS_GPU_PREFERENCE\nmode_env() {\n  case $1 in\n    freedreno) echo \"MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl FD_FORCE_KGSL=1 GALLIUM_DRIVER=freedreno\" ;;\n    zink) echo \"VK_ICD_FILENAMES=$ICD MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink\" ;;\n    *) echo \"LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe\" ;;\n  esac\n}\nworks() {\n  env $(mode_env $1) timeout 10 glxinfo -B 2>/dev/null | grep -i \"renderer string\" | grep -qiE \"adreno|zink|freedreno|turnip\"\n}\necho \"GASS-STATUS Selecting GPU mode\"\nMODE=llvmpipe\ncase \"$PREF\" in\n  zink|freedreno|llvmpipe) MODE=$PREF ;;\n  *)\n    if [ \"$XM\" = glamor ]; then\n      if [ -r \"$CACHE\" ]; then\n        cached=$(cat \"$CACHE\")\n        case \"$cached\" in zink|freedreno|llvmpipe) MODE=$cached ;; esac\n      elif command -v glxinfo >/dev/null 2>&1; then\n        for m in zink freedreno; do\n          if works $m; then MODE=$m; break; fi\n        done\n        echo \"$MODE\" > \"$CACHE\"\n      fi\n    fi\n    ;;\nesac\necho \"X server: $XM, GPU mode: $MODE\" > $HOME/.gass-gpu.log\necho \"GASS-STATUS GPU: $MODE - starting XFCE\"\nexport $(mode_env $MODE)\nif command -v xclip >/dev/null 2>&1; then\n  ( lp=\"\"; lc=\"\"\n    while true; do\n      a=$(timeout 2 xclip -o -selection primary 2>/dev/null | base64 -w0)\n      if [ -n \"$a\" ] && [ \"$a\" != \"$lp\" ]; then lp=$a; echo \"GASS-CLIP $a\"; fi\n      b=$(timeout 2 xclip -o -selection clipboard 2>/dev/null | base64 -w0)\n      if [ -n \"$b\" ] && [ \"$b\" != \"$lc\" ]; then lc=$b; echo \"GASS-CLIP $b\"; fi\n      sleep 1\n    done ) &\nfi\n( for i in $(seq 1 60); do\n    if pgrep -x xfce4-panel >/dev/null 2>&1; then sleep 1; echo GASS-READY; break; fi\n    sleep 1\n  done ) &\n( while true; do\n    if [ -s $HOME/.gass-autorun ] && pgrep -x xfce4-panel >/dev/null 2>&1; then\n      c=$(cat $HOME/.gass-autorun); rm -f $HOME/.gass-autorun\n      ( export DISPLAY=:1; unset WAYLAND_DISPLAY; sh -c \"$c\" >/tmp/gass-autorun.log 2>&1 ) &\n    fi\n    sleep 1\n  done ) &\nexec dbus-launch --exit-with-session startxfce4\n";
+    private static final String GASS_SESSION = "#!/bin/bash\nexport DISPLAY=:1 XDG_SESSION_TYPE=x11 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb\nexport XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_ENABLE_WAYLAND=0\n(exec 3<>/dev/tcp/127.0.0.1/4713) 2>/dev/null && export PULSE_SERVER=127.0.0.1\nexport TU_DEBUG=noconform MESA_NO_ERROR=1 vblank_mode=0 mesa_glthread=true MESA_VK_WSI_PRESENT_MODE=mailbox\nGASS_EXTRA_ENV_BLOCK\nICD=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json\nXM=$(cat /tmp/gass-xmode 2>/dev/null || echo shm)\nCACHE=$HOME/.gass-gpu-$XM\nPREF=GASS_GPU_PREFERENCE\nmode_env() {\n  case $1 in\n    freedreno) echo \"MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl FD_FORCE_KGSL=1 GALLIUM_DRIVER=freedreno\" ;;\n    zink) echo \"VK_ICD_FILENAMES=$ICD MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink\" ;;\n    *) echo \"LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe\" ;;\n  esac\n}\nworks() {\n  env $(mode_env $1) timeout 10 glxinfo -B 2>/dev/null | grep -i \"renderer string\" | grep -qiE \"adreno|zink|freedreno|turnip\"\n}\necho \"GASS-STATUS Selecting GPU mode\"\nMODE=llvmpipe\ncase \"$PREF\" in\n  zink|freedreno|llvmpipe) MODE=$PREF ;;\n  *)\n    if [ \"$XM\" = glamor ]; then\n      if [ -r \"$CACHE\" ]; then\n        cached=$(cat \"$CACHE\")\n        case \"$cached\" in zink|freedreno|llvmpipe) MODE=$cached ;; esac\n      elif command -v glxinfo >/dev/null 2>&1; then\n        for m in zink freedreno; do\n          if works $m; then MODE=$m; break; fi\n        done\n        echo \"$MODE\" > \"$CACHE\"\n      fi\n    fi\n    ;;\nesac\necho \"X server: $XM, GPU mode: $MODE\" > $HOME/.gass-gpu.log\necho \"GASS-STATUS GPU: $MODE - starting XFCE\"\nexport $(mode_env $MODE)\nif command -v xclip >/dev/null 2>&1; then\n  ( lp=\"\"; lc=\"\"\n    while true; do\n      a=$(timeout 2 xclip -o -selection primary 2>/dev/null | base64 -w0)\n      if [ -n \"$a\" ] && [ \"$a\" != \"$lp\" ]; then lp=$a; echo \"GASS-CLIP $a\"; fi\n      b=$(timeout 2 xclip -o -selection clipboard 2>/dev/null | base64 -w0)\n      if [ -n \"$b\" ] && [ \"$b\" != \"$lc\" ]; then lc=$b; echo \"GASS-CLIP $b\"; fi\n      sleep 1\n    done ) &\nfi\n( for i in $(seq 1 60); do\n    if pgrep -x xfce4-panel >/dev/null 2>&1; then sleep 1; echo GASS-READY; break; fi\n    sleep 1\n  done ) &\n( while true; do\n    if [ -s $HOME/.gass-autorun ] && pgrep -x xfce4-panel >/dev/null 2>&1; then\n      c=$(cat $HOME/.gass-autorun); rm -f $HOME/.gass-autorun\n      ( export DISPLAY=:1; unset WAYLAND_DISPLAY; sh -c \"$c\" >/tmp/gass-autorun.log 2>&1 ) &\n    fi\n    sleep 1\n  done ) &\nexec dbus-launch --exit-with-session startxfce4\n";
     static class SplashBar extends View {
         final android.graphics.Paint pt = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         float prog = 0f;
@@ -350,8 +354,22 @@ rootRef = rootView; setContentView(rootView);
                 !"llvmpipe".equals(gpuMode)) {
                 gpuMode = "auto";
             }
+            StringBuilder customEnv = new StringBuilder();
+            for (String line : Cfg.get(this, "env", "").split("\\n")) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                int eq = line.indexOf('=');
+                if (eq <= 0) continue;
+                String key = line.substring(0, eq);
+                String value = line.substring(eq + 1);
+                if (!key.matches("[A-Za-z_][A-Za-z0-9_]*")) continue;
+                customEnv.append("export ").append(key).append("=")
+                    .append(Cfg.q(value)).append("\\n");
+            }
             java.io.FileWriter w = new java.io.FileWriter(f);
-            w.write(GASS_SESSION.replace("GASS_GPU_PREFERENCE", gpuMode));
+            w.write(GASS_SESSION
+                .replace("GASS_GPU_PREFERENCE", gpuMode)
+                .replace("GASS_EXTRA_ENV_BLOCK", customEnv.toString()));
             w.close();
             f.setExecutable(true, false);
         } catch (Throwable t) {
@@ -669,6 +687,8 @@ rootRef = rootView; setContentView(rootView);
     private static final String GASS_START = "#!/bin/bash\necho \"GASS-STATUS Preparing desktop\"\nmkdir -p /etc/sudoers.d; echo 'user ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/user; chmod 440 /etc/sudoers.d/user\nif [ ! -s /root/gass.xkb ]; then\n  echo \"GASS-STATUS Creating keyboard layout\"\n  command -v xkbcomp >/dev/null 2>&1 || { apt-get update >/dev/null 2>&1; apt-get install -y x11-xkb-utils >/dev/null 2>&1; }\n  echo 'xkb_keymap { xkb_keycodes { include \"evdev+aliases(qwerty)\" }; xkb_types { include \"complete\" }; xkb_compat { include \"complete\" }; xkb_symbols { include \"pc+us+inet(evdev)\" }; };' | xkbcomp -w 0 -xkb - /root/gass.xkb 2>/dev/null\nfi\n[ -s /root/gass.xkb ] && echo \"GASS-KEYMAP /root/gass.xkb\"\necho 'Xft.dpi: 192' > /root/.Xresources\ncp -f /root/.Xresources /home/user/.Xresources 2>/dev/null\nmkdir -p /usr/lib/firefox-esr/defaults/pref /home/user/.config/vlc\ncat > /usr/lib/firefox-esr/defaults/pref/gass.js <<'E'\npref(\"security.sandbox.content.level\", 0);\npref(\"media.hardware-video-decoding.enabled\", false);\npref(\"media.ffmpeg.vaapi.enabled\", false);\npref(\"layers.acceleration.disabled\", true);\npref(\"gfx.webrender.software\", true);\nE\n[ -e /home/user/.config/vlc/vlcrc ] || printf '[avcodec]\\navcodec-hw=none\\n[core]\\nvout=x11\\n' > /home/user/.config/vlc/vlcrc\ncat > /usr/local/bin/gpu-run <<'E'\n#!/bin/sh\n${GPU_CMD:-/usr/local/bin/gpu} \"$@\" 2>&1 | tee /home/user/gpu-last.log\necho\necho \"=== finished - log saved in ~/gpu-last.log ===\"\nE\ncat > /usr/local/bin/gpu-gl <<'E'\n#!/bin/sh\nfor v in DISPLAY LIBGL_ALWAYS_SOFTWARE LIBGL_KOPPER_DISABLE GALLIUM_DRIVER MESA_LOADER_DRIVER_OVERRIDE EGL_PLATFORM TURNIP_KMD FD_FORCE_KGSL XWAYLAND_FORCE_KGSL_SURFACELESS; do unset $v; done\nexport WAYLAND_DISPLAY=/run/droidnative/wayland-0 XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl GALLIUM_DRIVER=freedreno FD_FORCE_KGSL=1\nexport GDK_BACKEND=wayland QT_QPA_PLATFORM=wayland SDL_VIDEODRIVER=wayland\nexec \"$@\"\nE\nchmod +x /usr/local/bin/gpu-run /usr/local/bin/gpu-gl\nD=/home/user/.local/share/applications; mkdir -p $D\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU glmark2\\nExec=xfce4-terminal --hold -x /usr/local/bin/gpu-run glmark2-wayland\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-glmark2.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU glmark2 (freedreno GL)\\nExec=xfce4-terminal --hold -x env GPU_CMD=/usr/local/bin/gpu-gl /usr/local/bin/gpu-run glmark2-wayland\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-glmark2-gl.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU Terminal (foot)\\nExec=/usr/local/bin/gpu foot\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-terminal.desktop\nchown -R user:user /home/user/.local /home/user/.config 2>/dev/null\ncat > /usr/local/bin/firefox-safe <<'E'\n#!/bin/sh\nunset WAYLAND_DISPLAY\nexport DISPLAY=:1 GDK_BACKEND=x11 MOZ_ENABLE_WAYLAND=0 MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_ACCELERATED=0 LIBGL_ALWAYS_SOFTWARE=1 MOZ_CRASHREPORTER_DISABLE=1\nexec firefox-esr --no-remote --new-instance \"$@\"\nE\ncat > /usr/local/bin/vlc-safe <<'E'\n#!/bin/sh\nunset WAYLAND_DISPLAY\nexport DISPLAY=:1\nA=dummy; [ -n \"$PULSE_SERVER\" ] && A=pulse\nexec vlc --vout=x11 --aout=$A --avcodec-hw=none \"$@\"\nE\nchmod +x /usr/local/bin/firefox-safe /usr/local/bin/vlc-safe\nD=/home/user/.local/share/applications; mkdir -p $D\nprintf '[Desktop Entry]\\nType=Application\\nName=Firefox (safe)\\nExec=/usr/local/bin/firefox-safe\\nTerminal=false\\nCategories=Network;\\n' > $D/firefox-safe.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=VLC (safe)\\nExec=/usr/local/bin/vlc-safe\\nTerminal=false\\nCategories=AudioVideo;\\n' > $D/vlc-safe.desktop\nchown -R user:user /home/user/.local 2>/dev/null\n/usr/local/bin/gass-xserver\nexport DISPLAY=:1\nxhost +local: >/dev/null 2>&1\nunset WAYLAND_DISPLAY\nexec su user -c /usr/local/bin/gass-session\n";
     private static final String GASS_XSERVER = "#!/bin/bash\nexport XDG_RUNTIME_DIR=/run/droidnative WAYLAND_DISPLAY=wayland-0\nrm -f /tmp/.X1-lock /tmp/.X11-unix/X1\nLOG=/tmp/gass-xserver.log\n: > $LOG\nwait_x() { for i in $(seq 1 12); do [ -S /tmp/.X11-unix/X1 ] && return 0; sleep 0.5; done; return 1; }\nXM=shm\nif [ ! -e /home/user/.gass-safe ] && [ -c /dev/kgsl-3d0 ]; then\n  echo \"GASS-STATUS Starting X server (GPU)\"\n  env MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl FD_FORCE_KGSL=1 GALLIUM_DRIVER=freedreno XWAYLAND_FORCE_KGSL_SURFACELESS=1 EGL_PLATFORM=surfaceless TU_DEBUG=noconform Xwayland :1 -fullscreen -noreset -glamor gl >> $LOG 2>&1 &\n  XP=$!\n  if wait_x; then\n    sleep 1\n    if kill -0 $XP 2>/dev/null && command -v xdpyinfo >/dev/null 2>&1 && DISPLAY=:1 timeout 5 xdpyinfo -queryExtensions 2>/dev/null | grep -qi dri3; then XM=glamor; fi\n  fi\n  if [ \"$XM\" != glamor ]; then\n    kill $XP 2>/dev/null; sleep 1; kill -9 $XP 2>/dev/null\n    rm -f /tmp/.X1-lock /tmp/.X11-unix/X1\n  fi\nfi\nif [ \"$XM\" != glamor ]; then\n  echo \"GASS-STATUS Starting X server (software)\"\n  Xwayland :1 -shm -fullscreen -noreset >> $LOG 2>&1 &\n  wait_x\nfi\necho $XM > /tmp/gass-xmode\n";
 
+    private static final String GASS_LABWC = "#!/bin/bash\nLOG=$HOME/labwc-test.log\nfor c in labwc foot glmark2-wayland; do\n  command -v $c >/dev/null 2>&1 || { echo \"Missing $c. Run: sudo apt install -y labwc foot glmark2-wayland\"; exit 1; }\ndone\nPARENT=/run/droidnative/wayland-0\n[ -S $PARENT ] || { echo \"Compositor socket not found: $PARENT\"; exit 1; }\nexport XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\ncat > /tmp/labwc-test.sh <<'E'\n#!/bin/bash\nunset LIBGL_ALWAYS_SOFTWARE GALLIUM_DRIVER MESA_LOADER_DRIVER_OVERRIDE LIBGL_KOPPER_DISABLE DISPLAY\necho \"== nested labwc test ==\"\necho \"WAYLAND_DISPLAY=$WAYLAND_DISPLAY\"\necho\necho \"-- software baseline\"\nLIBGL_ALWAYS_SOFTWARE=1 glmark2-wayland --benchmark build:duration=1 2>&1 | grep -i -E \"renderer|score|error|fail\" | head -5\necho\necho \"-- zink on Turnip (GPU)\"\nVK_ICD_FILENAMES=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink TU_DEBUG=noconform glmark2-wayland --benchmark build:duration=1 2>&1 | grep -i -E \"renderer|score|error|fail\" | head -6\necho\necho \"Finished. Close this window when you are done.\"\nsleep 3600\nE\nchmod +x /tmp/labwc-test.sh\nunset DISPLAY\nexport WAYLAND_DISPLAY=$PARENT\nexport WLR_BACKENDS=wayland WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 XDG_SESSION_TYPE=wayland\necho \"Starting nested labwc, log in $LOG\"\nexec labwc -s \"foot -e /tmp/labwc-test.sh\" > $LOG 2>&1\n";
+
     private void writeScript(String rel, String body) {
         try {
             File f = new File(root, rel);
@@ -685,6 +705,7 @@ rootRef = rootView; setContentView(rootView);
     private void installStartScripts() {
         writeScript("usr/local/bin/gass-start", GASS_START);
         writeScript("usr/local/bin/gass-xserver", GASS_XSERVER);
+        writeScript("usr/local/bin/gass-labwc", GASS_LABWC);
     }
 
     private int deskId = -1;
@@ -967,6 +988,33 @@ rootRef = rootView; setContentView(rootView);
         finish();
     }
 
+    private String devBinds() {
+        File rd = new File(root, "dev");
+        rd.mkdirs();
+        File shm = new File(rd, "shm");
+        shm.mkdirs();
+        shm.setReadable(true, false);
+        shm.setWritable(true, false);
+        shm.setExecutable(true, false);
+        String[] nodes = {"null", "zero", "full", "random", "urandom", "tty", "ptmx", "ashmem", "ion", "kgsl-3d0", "pts", "dma_heap"};
+        StringBuilder sb = new StringBuilder();
+        for (String n : nodes) {
+            File host = new File("/dev", n);
+            if (!host.exists()) continue;
+            File guest = new File(rd, n);
+            try {
+                if (host.isDirectory()) guest.mkdirs();
+                else if (!guest.exists()) guest.createNewFile();
+            } catch (Exception ignored) {}
+            sb.append(" -b /dev/").append(n);
+        }
+        String[][] links = {{"fd", "/proc/self/fd"}, {"stdin", "/proc/self/fd/0"}, {"stdout", "/proc/self/fd/1"}, {"stderr", "/proc/self/fd/2"}};
+        for (String[] l : links) {
+            try { android.system.Os.symlink(l[1], new File(rd, l[0]).getAbsolutePath()); } catch (Throwable ignored) {}
+        }
+        return sb.toString();
+    }
+
     private void startCompositor() {
         if (starting || (compositor != null && compositor.isRunning())) {
             say("Compositor is already running or starting.");
@@ -1056,6 +1104,7 @@ rootRef = rootView; setContentView(rootView);
                     if (ok) {
                         compositor = c;
                         say("Compositor running."); launchGuest(XFCE_CMD);
+                        launchPendingX11();
                         attachSurface();
                     } else {
                         say("Compositor startup failed. Check Android logcat.");
@@ -1198,6 +1247,11 @@ rootRef = rootView; setContentView(rootView);
         setIntent(intent);
         writeAutorun(intent);
         if (intent != null) {
+            String x11 = intent.getStringExtra("x11_command");
+            if (x11 != null && !x11.trim().isEmpty()) {
+                pendingX11Command = x11;
+                launchPendingX11();
+            }
             String cmd = intent.getStringExtra("linux_command");
             if (cmd != null && !cmd.trim().isEmpty()) {
                 launchAppGuest(cmd);
@@ -1205,9 +1259,19 @@ rootRef = rootView; setContentView(rootView);
         }
     }
 
+    private void launchPendingX11() {
+        final String cmd = pendingX11Command;
+        if (cmd == null || cmd.trim().isEmpty()) return;
+        if (compositor == null || !compositor.isRunning()) return;
+        pendingX11Command = null;
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+            () -> launchAppGuest("GASS_X11:" + cmd), 1200);
+    }
+
     // Separate process: XFCE occupies "guest", so Linux apps must not reuse it.
     private void launchAppGuest(String appCommand) {
-        final String cmd = appCommand.trim();
+        final boolean useX11 = appCommand.startsWith("GASS_X11:");
+        final String cmd = (useX11 ? appCommand.substring(9) : appCommand).trim();
         if (cmd.isEmpty()) return;
         if (compositor == null || !compositor.isRunning()) {
             android.widget.Toast.makeText(this,
@@ -1239,7 +1303,7 @@ rootRef = rootView; setContentView(rootView);
                     + " PROOT_TMP_DIR=" + Cfg.q(new File(getCacheDir(), "proot").getAbsolutePath())
                     + " exec " + Cfg.q(nativeDir + "/libproot.so")
                     + " --link2symlink -0 -r " + Cfg.q(root.getAbsolutePath())
-                    + shmBind() + " -b /dev -b /proc -b /sys" + sdBinds()
+                    + devBinds() + " -b /proc -b /sys" + sdBinds()
                     + " -b " + Cfg.q(fakeStat.getAbsolutePath() + ":/proc/stat")
                     + " -b " + Cfg.q(runDir.getAbsolutePath() + ":/run/droidnative")
                     + Cfg.binds(this)
@@ -1247,9 +1311,13 @@ rootRef = rootView; setContentView(rootView);
                     + " HOME=/root USER=root LOGNAME=root TERM=xterm LANG=C.UTF-8"
                     + " PULSE_SERVER=tcp:127.0.0.1:4714"
                     + " PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-                    + " XDG_RUNTIME_DIR=/run/droidnative WAYLAND_DISPLAY=wayland-0"
-                    + " XDG_SESSION_TYPE=wayland GDK_BACKEND=wayland"
-                    + " QT_QPA_PLATFORM=wayland SDL_VIDEODRIVER=wayland"
+                    + (useX11
+                        ? " DISPLAY=:1 XDG_RUNTIME_DIR=/tmp/runtime-user"
+                          + " XDG_SESSION_TYPE=x11 GDK_BACKEND=x11"
+                          + " QT_QPA_PLATFORM=xcb SDL_VIDEODRIVER=x11"
+                        : " XDG_RUNTIME_DIR=/run/droidnative WAYLAND_DISPLAY=wayland-0"
+                          + " XDG_SESSION_TYPE=wayland GDK_BACKEND=wayland"
+                          + " QT_QPA_PLATFORM=wayland SDL_VIDEODRIVER=wayland")
                     + Cfg.env(this)
                     + " /usr/bin/bash -lc " + Cfg.q(cmd);
 

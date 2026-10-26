@@ -298,18 +298,84 @@ public class SettingsActivity extends Activity {
             freeSpace, GREEN);
     }
 
-    private void saveSettings() {
+    private boolean validateEnvironmentSettings() {
         String d = dns.getText().toString().trim();
-        if (d.length() == 0) d = "1.1.1.1";
+        String[] octets = d.split("\\.", -1);
+        boolean ipv4 = octets.length == 4;
+        if (ipv4) {
+            for (String part : octets) {
+                if (!part.matches("[0-9]{1,3}")) {
+                    ipv4 = false;
+                    break;
+                }
+                int n = Integer.parseInt(part);
+                if (n < 0 || n > 255) {
+                    ipv4 = false;
+                    break;
+                }
+            }
+        }
+        if (!ipv4) {
+            dns.setError("Enter a valid IPv4 DNS address, e.g. 1.1.1.1");
+            return false;
+        }
 
         String resolution = res.getText().toString().trim();
         if (!resolution.matches("[0-9]{3,5}x[0-9]{3,5}")) {
             res.setError("Use a resolution like 1280x720");
-            Toast.makeText(this, "Check the screen resolution",
+            return false;
+        }
+        String[] dimensions = resolution.split("x");
+        int width = Integer.parseInt(dimensions[0]);
+        int height = Integer.parseInt(dimensions[1]);
+        if (width < 320 || width > 16384 ||
+            height < 200 || height > 16384) {
+            res.setError("Width must be 320–16384; height 200–16384");
+            return false;
+        }
+
+        String[] mountLines = binds.getText().toString().split("\\n");
+        for (int i = 0; i < mountLines.length; i++) {
+            String line = mountLines[i].trim();
+            if (line.isEmpty()) continue;
+            String[] pair = line.split(":", -1);
+            if (pair.length != 2 ||
+                !pair[0].startsWith("/") ||
+                !pair[1].startsWith("/") ||
+                pair[0].contains(" ") ||
+                pair[1].contains(" ")) {
+                binds.setError("Line " + (i + 1) +
+                    ": use absolute paths host:/guest/path");
+                return false;
+            }
+        }
+
+        String[] envLines = env.getText().toString().split("\\n");
+        for (int i = 0; i < envLines.length; i++) {
+            String line = envLines[i].trim();
+            if (line.isEmpty()) continue;
+            int equals = line.indexOf('=');
+            if (equals < 1 ||
+                !line.substring(0, equals).matches("[A-Za-z_][A-Za-z0-9_]*") ||
+                line.indexOf('\0') >= 0) {
+                env.setError("Line " + (i + 1) +
+                    ": use KEY=VALUE (valid environment variable name)");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void saveSettings() {
+        if (!validateEnvironmentSettings()) {
+            Toast.makeText(this, "Please correct the highlighted settings",
                 Toast.LENGTH_LONG).show();
             return;
         }
+        String d = dns.getText().toString().trim();
+        if (d.length() == 0) d = "1.1.1.1";
 
+        String resolution = res.getText().toString().trim();
         String[] gpuValues = {
             "auto", "zink", "freedreno", "llvmpipe"
         };
@@ -448,7 +514,7 @@ public class SettingsActivity extends Activity {
         dns = field(content, "DNS server",
             Cfg.dns(this), false);
         res = field(content,
-            "Desktop resolution (for later desktop configuration)",
+            "Preferred desktop resolution (display bridge may override)",
             Cfg.get(this, "res", "1280x720"), false);
         binds = field(content,
             "Extra bind mounts — one per line (host:guest)",

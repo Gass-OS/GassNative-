@@ -26,6 +26,110 @@ public final class UpdateChecker {
     private UpdateChecker() {}
 
 
+
+    /**
+     * Best-effort mandatory update gate.
+     * The online feed must advertise a versionCode greater than the
+     * installed APK for the blocking dialog to appear.
+     */
+    public static void enforce(Activity activity) {
+        final String releases =
+            "https://github.com/Gass-OS/GassNative-/releases/latest";
+
+        Thread worker = new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL(
+                    UPDATE_URL + "?mandatory=" + System.currentTimeMillis());
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setConnectTimeout(6000);
+                connection.setReadTimeout(6000);
+                connection.setUseCaches(false);
+                connection.setRequestProperty("Accept", "application/json");
+
+                if (connection.getResponseCode() != 200) return;
+
+                StringBuilder body = new StringBuilder();
+                try (InputStream in = connection.getInputStream();
+                     BufferedReader reader = new BufferedReader(
+                         new InputStreamReader(in, "UTF-8"))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        body.append(line);
+                        if (body.length() > 65536) return;
+                    }
+                }
+
+                JSONObject data = new JSONObject(body.toString());
+                int latestCode = data.optInt("versionCode", 0);
+                String latestName = data.optString("versionName", "").trim();
+                String notes = data.optString("releaseNotes",
+                    "Please install the latest GassNative release.");
+                String download = data.optString("downloadUrl", releases);
+
+                if (latestCode <= 0 || latestName.isEmpty()) return;
+                if (!download.startsWith(
+                    "https://github.com/Gass-OS/GassNative-/releases")) {
+                    download = releases;
+                }
+
+                PackageInfo info = activity.getPackageManager()
+                    .getPackageInfo(activity.getPackageName(), 0);
+                long installedCode = Build.VERSION.SDK_INT >= 28
+                    ? info.getLongVersionCode() : info.versionCode;
+
+                if (latestCode <= installedCode) return;
+
+                final String version = latestName;
+                final String message = notes;
+                final String target = download;
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (activity.isFinishing()
+                        || (Build.VERSION.SDK_INT >= 17
+                            && activity.isDestroyed())) return;
+
+                    AlertDialog dialog = new AlertDialog.Builder(activity)
+                        .setTitle("Update required")
+                        .setMessage("GassNative " + version
+                            + " is required to continue.\n\n" + message
+                            + "\n\nInstall the update, then reopen the app.")
+                        .setPositiveButton("Update now", null)
+                        .setNegativeButton("Exit", (d, which) ->
+                            activity.finishAffinity())
+                        .create();
+
+                    dialog.setCancelable(false);
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.setOnShowListener(d -> {
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                            .setOnClickListener(v -> {
+                                try {
+                                    activity.startActivity(new Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(target)));
+                                } catch (Exception ignored) {
+                                    try {
+                                        activity.startActivity(new Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse(releases)));
+                                    } catch (Exception ignoredAgain) {}
+                                }
+                            });
+                    });
+                    dialog.show();
+                });
+            } catch (Exception ignored) {
+                // Offline/server failure: allow startup rather than lock users out.
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "GassNative-MandatoryUpdate");
+
+        worker.setDaemon(true);
+        worker.start();
+    }
+
     public static void check(Activity activity) {
         Thread worker = new Thread(() -> {
             HttpURLConnection c = null;
