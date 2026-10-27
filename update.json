@@ -1,15 +1,15 @@
 {
-  "versionCode": 13,
-  "versionName": "0.7",
-  "downloadUrl": "https://github.com/Gass-OS/GassNative-/releases/latest",
-  "releaseNotes": "GassNative v0.7 Build 13: refreshed interface, AI help, Linux distribution selection, media improvements, and desktop updates.",
+  "versionCode": 14,
+  "versionName": "0.8",
+  "downloadUrl": "https://github.com/Gass-OS/GassNative-/releases/latest/download/gassnative.apk",
+  "releaseNotes": "GassNative v0.8 Build 14: refreshed interface, improved clock and calendar, live technology news, AI and desktop improvements, and additional appearance and communication features.",
   "news": [
     {
-      "id": "gassnative-welcome-2026-10",
-      "title": "GassNative v0.7 is here!",
-      "message": "Discover AI help, Linux distribution selection, and the latest interface and desktop improvements.",
+      "id": "gassnative-v08-build14",
+      "title": "GassNative v0.8 is here!",
+      "message": "Explore the refreshed interface, live technology news, AI improvements, and updated desktop features.",
       "buttonText": "Read release notes",
-      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.7-build13"
+      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.8-build14"
     }
   ]
 }
