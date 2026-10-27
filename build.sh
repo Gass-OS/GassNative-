@@ -15,8 +15,12 @@ cp build/base.apk build/app.apk
 (cd build && zip -j app.apk classes.dex)
 mkdir -p build/lib && cp -r jniLibs/arm64-v8a build/lib/ && (cd build && zip -r app.apk lib)
 zip -r build/app.apk assets/tar-tool
+zip -r build/app.apk assets/gassnative-brandmark.png
 zip -r build/app.apk assets/audio
 zip -r build/app.apk assets/ui
+zip -r build/app.apk assets/gassnative-square.png
+zip -j build/app.apk assets/1061942.png
+zip -j build/app.apk assets/GassNative-PUMPKIN-R8.png
 zip -r build/app.apk assets/ai-knowledge
 zip -r build/app.apk assets/hangover
 zipalign -f 4 build/app.apk build/aligned.apk

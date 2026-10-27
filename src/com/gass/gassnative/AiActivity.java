@@ -114,6 +114,416 @@ public class AiActivity extends Activity {
     private static final String SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ed3B12WA0AYUf8QtGQNDWg_FmNXpt_P";
     private static final String SUPABASE_ANON_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0aWd0d3phZWl5ZHJhcXJ0endkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5ODM5NjgsImV4cCI6MjEwODU1OTk2OH0.fAWoJofk0mUmBf-GhrOA6-zIF_2eXkl3ZdOTvWWUMow";
 
+    // GASS_PERSONALITIES_V1
+    private String assistantId = "aymen";
+    private TextView assistantPicker;
+
+    private String assistantName() {
+        switch (assistantId) {
+            case "fares": return "Fares AI";
+            case "gadour": return "Gadour AI";
+            case "wael": return "Wael AI";
+            default: return "Aymen AI";
+        }
+    }
+
+    private String assistantIcon() {
+        switch (assistantId) {
+            case "fares": return "😊";
+            case "gadour": return "😎";
+            case "wael": return "💡";
+            default: return "🤓";
+        }
+    }
+
+    private String assistantRole() {
+        switch (assistantId) {
+            case "fares": return "Friendly Guide";
+            case "gadour": return "Funny One";
+            case "wael": return "Creative Thinker";
+            default: return "Tech Genius";
+        }
+    }
+
+    private int assistantAccent(String id) {
+        switch (id) {
+            case "fares": return 0xFF4ADEB6;
+            case "gadour": return 0xFFF59EAD;
+            case "wael": return 0xFFFBBF64;
+            default: return 0xFF73A8FF;
+        }
+    }
+
+    private void refreshAssistantPicker() {
+        if (assistantPicker != null) {
+            assistantPicker.setText(assistantIcon() + "  "
+                + assistantName() + " · " + assistantRole()
+                + "\\nTap to choose your AI buddy  ›");
+            assistantPicker.setBackground(
+                shape(0xFF14243E, assistantAccent(assistantId), 18));
+        }
+        if (input != null)
+            input.setHint("Message " + assistantName() + "...");
+    }
+
+    private void chooseAssistant(String id) {
+        assistantId = id;
+        getSharedPreferences("gass_ai", MODE_PRIVATE).edit()
+            .putString("assistant", id).apply();
+        refreshAssistantPicker();
+        addMessage(assistantName() + " · OFFLINE",
+            assistantIcon() + " Hey bro! " + assistantName()
+            + " here. Ready when you are! 💙", false);
+    }
+
+    private void showAssistantChooser() {
+        final String[] ids = {"aymen", "fares", "gadour", "wael"};
+        final String[] names = {
+            "🤓  Aymen AI", "😊  Fares AI",
+            "😎  Gadour AI", "💡  Wael AI"
+        };
+        final String[] descriptions = {
+            "Tech Genius · Linux and debugging",
+            "Friendly Guide · Step-by-step help",
+            "Funny One · Jokes and useful answers",
+            "Creative Thinker · Ideas and solutions"
+        };
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(16), dp(16), dp(16), dp(12));
+        content.setBackgroundColor(0xFF0D172A);
+
+        TextView title = label("✨ Choose your AI buddy", 20, white);
+        title.setTypeface(null, Typeface.BOLD);
+        title.setPadding(dp(4), 0, 0, dp(15));
+        content.addView(title);
+
+        android.app.AlertDialog dialog =
+            new android.app.AlertDialog.Builder(this)
+                .setView(content).create();
+
+        for (int i = 0; i < ids.length; i++) {
+            final String id = ids[i];
+
+            LinearLayout card = new LinearLayout(this);
+            card.setOrientation(LinearLayout.VERTICAL);
+            card.setPadding(dp(15), dp(12), dp(15), dp(12));
+            card.setBackground(shape(
+                id.equals(assistantId) ? 0xFF22334E : 0xFF14243B,
+                assistantAccent(id), 16));
+
+            TextView name = label(names[i]
+                + (id.equals(assistantId) ? "  ✓" : ""), 17, white);
+            name.setTypeface(null, Typeface.BOLD);
+            card.addView(name);
+            card.addView(label(descriptions[i], 12, soft));
+
+            card.setOnClickListener(v -> {
+                chooseAssistant(id);
+                dialog.dismiss();
+            });
+
+            LinearLayout.LayoutParams lp =
+                new LinearLayout.LayoutParams(-1, -2);
+            lp.bottomMargin = dp(10);
+            content.addView(card, lp);
+        }
+
+        dialog.show();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawableResource(
+                android.R.color.transparent);
+    }
+
+    // Replaced by the Kasserine Brain installer below.
+
+    // GASS_KASSERINE_BRAIN_V2
+    private int localConversationCount = 0;
+    private String localTopic = "";
+
+    private boolean hasAny(String s, String... words) {
+        for (String w : words)
+            if (s.contains(w)) return true;
+        return false;
+    }
+
+    private String randomLine(String... lines) {
+        return lines[new java.util.Random().nextInt(lines.length)];
+    }
+
+    private String kasserineDialogue(String message) {
+        String s = message.toLowerCase(Locale.ROOT).trim()
+            .replace("أ", "ا").replace("إ", "ا").replace("آ", "ا")
+            .replace("ڨ", "ق").replace("ة", "ه")
+            .replaceAll("[؟?!.,،]+$", "");
+
+        boolean greeting = hasAny(s,
+            "سلام", "عسلام", "صباح الخير", "مساء الخير",
+            "واش حوالك", "واشك", "hello", "hey", "hi bro");
+
+        boolean mood = hasAny(s,
+            "لباس", "كيف الحال", "اش عامل", "شنوه حوالك",
+            "شنوة حوالك", "how are you", "how are u");
+
+        boolean weather = hasAny(s,
+            "طقس", "سخانه", "برد", "شتاء", "شمس", "weather");
+
+        boolean money = hasAny(s,
+            "مصروف", "فلوس", "دينار", "سلفني", "money");
+
+        boolean food = hasAny(s,
+            "كول", "حاره", "عظام", "مقرونه",
+            "جوع", "ماكله", "ناكل");
+
+        boolean joke = hasAny(s,
+            "ضحكني", "نكته", "joke", "roast me");
+
+        boolean thanks = hasAny(s,
+            "شكرا", "يعيشك", "بارك الله", "thanks", "thank you");
+
+        boolean identity = hasAny(s,
+            "شكون انت", "شنو اسمك", "اسمك شنو",
+            "your name", "who are you");
+
+        boolean upset = hasAny(s,
+            "تعبت", "مقلق", "مكركب", "زقحه",
+            "bored", "sad", "stressed");
+
+        boolean followup = hasAny(s,
+            "ايه", "ايا", "زيد", "اكمل", "continue",
+            "tell me more");
+
+        if (greeting) {
+            localTopic = "greeting";
+
+            switch (assistantId) {
+                case "fares":
+                    return randomLine(
+                        "واشك الخو 😂 لباس عليك صاحبي؟",
+                        "واش حوالك الخو؟ الدنيا زڨحة طول اليوم ولا لاباس؟",
+                        "هاو فارس حضر 😎 ارا واش بيك تسهّل ياسر؟"
+                    );
+
+                case "gadour":
+                    return randomLine(
+                        "السلام عليكم ورحمة الله وبركاته 🌹 كيف الحال اليوم؟",
+                        "وعليكم السلام يا صاحبي. والله الحمد لله رب العالمين، وانت كيف حالك؟",
+                        "مرحبا بيك خويا، ربي يجعل نهارك زين."
+                    );
+
+                case "wael":
+                    return randomLine(
+                        "واش حوالك صاحبي 💡 شنوة المشروع اليوم؟",
+                        "لباس عليك الخو؟ هات نشوفو شنوة نعملو اليوم.",
+                        "يا مرحبا! الدنيا كبيرة والمخ لازم يخدم 😂"
+                    );
+
+                default:
+                    return "أهلا الخو 💙 Aymen AI معاك. شنوة نصلحو اليوم؟";
+            }
+        }
+
+        if (mood) {
+            localTopic = "mood";
+
+            switch (assistantId) {
+                case "fares":
+                    return randomLine(
+                        "لباس الخو 😂 اش عامل فيك الطقس؟",
+                        "هاو عايشين صاحبي، كعبتين كول وحارة وعظام مصموتة 😂",
+                        "الحمد لله، وانت واش حوالك؟ فيكش شوي مصروف؟"
+                    );
+
+                case "gadour":
+                    return "والله الحمد لله رب العالمين 🌹 "
+                        + "ربي يدوم عليك الصحة والعافية. وانت كيف الحال اليوم؟";
+
+                case "wael":
+                    return "الحمد لله الخو 💡 المخ يخمّم والمشاريع تستنّى. "
+                        + "وانت لاباس عليك؟";
+
+                default:
+                    return "الحمد لله صاحبي 💙 جاهز نعاونك في GassNative.";
+            }
+        }
+
+        if (weather) {
+            localTopic = "weather";
+
+            switch (assistantId) {
+                case "fares":
+                    return randomLine(
+                        "طقس متاع زوز شراب 😂 اما ما تسألنيش على الحرارة، ما عنديش météo live!",
+                        "اش عامل فيك الطقس الخو؟ برد ولا سخانة؟",
+                        "الدنيا زڨحة طول اليوم 😂 هات قهوة وخلينا نحكيو."
+                    );
+
+                case "gadour":
+                    return "ربي يجعلها غيث نافع 🌹 "
+                        + "أما الطقس الحقيقي ما نجمش نعرفو بلا بيانات حديثة.";
+
+                case "wael":
+                    return "الطقس يتبدّل والمشاريع تبقى 😂 "
+                        + "ما عنديش قياسات مباشرة للجو، أما نجم نحكي معاك عليه.";
+
+                default:
+                    return "ما عنديش بيانات طقس مباشرة في الوضع offline. 💙";
+            }
+        }
+
+        if (money) {
+            localTopic = "money";
+
+            switch (assistantId) {
+                case "fares":
+                    return randomLine(
+                        "فيكش شوي مصروف الخو؟ 😂 راهو حتى أنا offline!",
+                        "يا صاحبي كان نلقى دينار في Java نبعثهولك 😂",
+                        "الدنيا زڨحة، المصروف يمشي أسرع من البطارية!"
+                    );
+
+                case "gadour":
+                    return "الرزق على ربي يا صاحبي 🌹 "
+                        + "أما أنا مساعد داخل APK، ما عنديش فلوس نسلفها 😂";
+
+                case "wael":
+                    return "نخترعولك مشروع يجيب المصروف خير 😂💡";
+
+                default:
+                    return "نجم نعاونك تعمل حسابات وميزانية، أما ما نجمش نحوّل فلوس.";
+            }
+        }
+
+        if (food) {
+            localTopic = "food";
+
+            switch (assistantId) {
+                case "fares":
+                    return randomLine(
+                        "كعبتين كول وحارة وعظام مصموتة 😂 يا سلام!",
+                        "مقرونة صالصة وحارة؟ ايا حل مخك الخو 😂",
+                        "يا صاحبي جوعتني وأنا مجرد Java code!"
+                    );
+
+                case "gadour":
+                    return "بالصحة والراحة 🌹 ربي يديم النعمة.";
+
+                case "wael":
+                    return "نعملو وصفة جديدة ولا نمشيو للكلاسيك؟ 😂💡";
+
+                default:
+                    return "بالصحة الخو! 💙 شنوة تحب تحضّر؟";
+            }
+        }
+
+        if (thanks) {
+            localTopic = "thanks";
+
+            switch (assistantId) {
+                case "fares": return "يعيشك الخو 😂 ديما موجود!";
+                case "gadour": return "بارك الله فيك يا صاحبي، ربي يحفظك 🌹";
+                case "wael": return "بالخدمة الخو 💡 هات الفكرة الجاية!";
+                default: return "على الرحب والسعة صاحبي 💙";
+            }
+        }
+
+        if (identity) {
+            switch (assistantId) {
+                case "fares":
+                    return "أنا فارس AI 😂 صاحبك الافتراضي من قعدة القصرين!";
+                case "gadour":
+                    return "أنا قدور AI، مساعد افتراضي. "
+                        + "السلام عليكم ورحمة الله 🌹";
+                case "wael":
+                    return "أنا وائل AI 💡 نحب الأفكار والحلول الجديدة.";
+                default:
+                    return "أنا Aymen AI 🤓 مساعد تقني داخل GassNative.";
+            }
+        }
+
+        if (upset) {
+            localTopic = "mood";
+
+            switch (assistantId) {
+                case "fares":
+                    return "واش بيك الخو؟ احكيلي شنوة صار. "
+                        + "نضحكو شوية ونشوفو حل 😂💙";
+                case "gadour":
+                    return "ربي يفرّج عليك يا صاحبي 🌹 "
+                        + "احكيلي، نسمعك.";
+                case "wael":
+                    return "نبدلو الجو شوية؟ 💡 "
+                        + "احكيلي المشكلة ونفكرو في حل.";
+                default:
+                    return "احكيلي شنوة المشكلة صاحبي. "
+                        + "نقسموها لخطوات صغيرة ونشوفو الحل. 💙";
+            }
+        }
+
+        if (joke) {
+            switch (assistantId) {
+                case "fares":
+                    return randomLine(
+                        "ارا واش بيك تسهّل ياسر 😂 حتى الـ Wi-Fi هرب منك!",
+                        "يا بهيم حل مخك 😂 الـ bug هذا ولى يسكن معاك!",
+                        "فيكش شوي مصروف؟ نعملو upgrade للمخ 😂"
+                    );
+
+                case "gadour":
+                    return "والله الحمد لله رب العالمين 😂 "
+                        + "حتى الكمبيوتر يلزمو صبر معاكم!";
+
+                case "wael":
+                    return "عندي فكرة: نعملو زر في GassNative "
+                        + "اسمو Fix Everything، أما يخدم كان نهار الأحد 😂💡";
+
+                default:
+                    return "Why do programmers prefer dark mode? "
+                        + "Because light attracts bugs! 😂";
+            }
+        }
+
+        if (followup && "greeting".equals(localTopic))
+            return "لباس عليك صاحبي؟ شنوة تحب نحكيو اليوم؟ 💙";
+
+        if (followup && "money".equals(localTopic))
+            return "😂 ايا نحكيو جد: تحب فكرة مشروع ولا نصيحة للمصروف؟";
+
+        if (followup && "food".equals(localTopic))
+            return "بالصحة الخو 😂 شنوة الوجبة الجاية؟";
+
+        return null;
+    }
+
+    private String offlinePersonalityReply(String message) {
+        localConversationCount++;
+
+        String local = kasserineDialogue(message);
+        if (local != null) return local;
+
+        // Preserve the original offline GassNative knowledge engine.
+        String answer = reply(message);
+
+        if (answer == null || answer.trim().isEmpty())
+            return "ما لقيتش إجابة في المعرفة المحلية متاعي توّا. 💙";
+
+        switch (assistantId) {
+            case "fares":
+                return "واشك الخو 😂\n\n" + answer;
+
+            case "gadour":
+                return "تفضل يا صاحبي 🌹\n\n" + answer;
+
+            case "wael":
+                return "خلينا نفكرو فيها 💡\n\n" + answer;
+
+            default:
+                return answer;
+        }
+    }
+
+
     private LinearLayout messages;
     private ScrollView scroll;
     private EditText input;
@@ -284,6 +694,29 @@ public class AiActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         botCardParams.bottomMargin = dp(10);
         root.addView(botCard, botCardParams);
+
+        assistantId = getSharedPreferences("gass_ai", MODE_PRIVATE)
+            .getString("assistant", "aymen");
+
+        if (!assistantId.equals("fares")
+                && !assistantId.equals("gadour")
+                && !assistantId.equals("wael")) {
+            assistantId = "aymen";
+        }
+
+        assistantPicker = label("", 14, white);
+        assistantPicker.setTypeface(null, Typeface.BOLD);
+        assistantPicker.setPadding(dp(15), dp(12), dp(12), dp(12));
+        assistantPicker.setClickable(true);
+        assistantPicker.setFocusable(true);
+        assistantPicker.setOnClickListener(v -> showAssistantChooser());
+
+        LinearLayout.LayoutParams pickerParams =
+            new LinearLayout.LayoutParams(-1, -2);
+        pickerParams.bottomMargin = dp(10);
+        root.addView(assistantPicker, pickerParams);
+        refreshAssistantPicker();
+
 
 
         scroll = new ScrollView(this);
@@ -886,9 +1319,10 @@ public class AiActivity extends Activity {
         gassTts.speak(spoken, TextToSpeech.QUEUE_FLUSH, null, "gass-reply");
     }
 
+
     private void sendMessage() {
         String rawMessage = input.getText().toString().trim();
-        if (rawMessage.length() == 0) return;
+        if (rawMessage.isEmpty()) return;
 
         String message = expandChoice(rawMessage);
         previousUserMessage = lastUserMessage;
@@ -896,30 +1330,18 @@ public class AiActivity extends Activity {
 
         input.setText("");
         addMessage("YOU", rawMessage, true);
-        addMessage("GASS AI", "Connecting to GASS AI…", false);
-        final View pending = messages.getChildAt(messages.getChildCount() - 1);
 
         InputMethodManager imm = (InputMethodManager)
             getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+        if (imm != null)
+            imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
         input.clearFocus();
 
-        new Thread(() -> {
-            String online = requestOnlineReply(message);
-            runOnUiThread(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                messages.removeView(pending);
-                if (online != null && !online.trim().isEmpty()) {
-                    lastAssistantReply = online.trim();
-                    addMessage("GASS AI · ONLINE", lastAssistantReply, false);
-                    speakReply(lastAssistantReply);
-                } else {
-                    lastAssistantReply = reply(message);
-                    addMessage("GASS AI · OFFLINE", lastAssistantReply, false);
-                    speakReply(lastAssistantReply);
-                }
-            });
-        }, "GassAI-Request").start();
+        // Offline-first: no API request or network timeout.
+        lastAssistantReply = offlinePersonalityReply(message);
+        addMessage(assistantName() + " · OFFLINE",
+            lastAssistantReply, false);
+        speakReply(lastAssistantReply);
     }
 
     private String requestOnlineReply(String message) {
@@ -1126,11 +1548,44 @@ public class AiActivity extends Activity {
         return best;
     }
 
+
+    // GASS_TUNISIAN_BRAIN_V1
+    private boolean containsArabicText(String text) {
+        if (text == null) return false;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c >= 0x0600 && c <= 0x06FF) return true;
+        }
+        return false;
+    }
+
     private String reply(String original) {
         String s = original.toLowerCase(Locale.ROOT).trim()
             .replaceAll("[!?.,]+$", "")
             .replaceAll("\\s+", " ");
 
+
+        // GASS_TUNISIAN_BRAIN_V1
+        if (s.contains("نهارك زين")) {
+            return "نهارك زين صاحبي 💙 شنوة نعاونك اليوم؟";
+        }
+        if (s.contains("وينك") || s.contains("اش عامل")
+                || s.contains("شنوة أحوالك") || s.contains("شنوة احوالك")) {
+            return "وينك اش عامل، لباس عليك اليوم؟ 😊";
+        }
+        if (s.contains("صحة الخو")) {
+            return "صحة بدنك يا صاحبي 💙";
+        }
+        if (s.contains("نهارك طيب")) {
+            return "نهارك أطيب يا patron 🌞";
+        }
+        if (s.contains("اجدي الفالح")) {
+            return "اجدي الفالح يا صاحبي 😄 شنوة المشروع اليوم؟";
+        }
+        if (s.equals("سلام") || s.equals("عسلامة")
+                || s.equals("السلام عليكم")) {
+            return "عسلامة صاحبي 💙 نهارك زين!";
+        }
 
         // GASS_OFFLINE_PRIORITY_V3
         if (s.contains("who created you") || s.contains("who made you")
@@ -1555,6 +2010,22 @@ public class AiActivity extends Activity {
             return "Let's check connectivity. Verify that Android itself has "
                 + "internet access, then share the exact DNS or connection error. "
                 + "Tell me whether it happens only inside Debian or across Android.";
+        }
+
+        // GASS_TUNISIAN_UNKNOWN_FALLBACK_V1
+        if (containsArabicText(original)) {
+            String[] tunisianFallbacks = {
+                "والله ما تعرف صاحبي، 😅",
+                "معندي حتى فكرة،",
+                "ازبي؟ تحبني نولي شات جي بي تي ولا واشي؟ 😂",
+                "اللهم زدنا علما،",
+                "تو نسقصي و نڨلك،",
+                "عرفي أيمن ما علمنيش هذي",
+                "كان هندك معلومة هات 💙"
+            };
+            return tunisianFallbacks[
+                new java.util.Random().nextInt(tunisianFallbacks.length)
+            ];
         }
 
         return "I couldn't find a reliable answer in my offline knowledge yet. 💙\n"

@@ -27,14 +27,18 @@ import java.io.File;
 import java.io.FileWriter;
 
 public class SettingsActivity extends Activity {
-    private static final int BG = Color.rgb(9, 13, 21);
-    private static final int PANEL = Color.rgb(20, 29, 43);
-    private static final int TILE = Color.rgb(28, 42, 60);
-    private static final int ORANGE = Color.rgb(255, 145, 75);
-    private static final int BLUE = Color.rgb(106, 174, 255);
-    private static final int GREEN = Color.rgb(114, 224, 177);
-    private static final int FG = Color.rgb(239, 243, 250);
-    private static final int MUTED = Color.rgb(166, 183, 205);
+    private int BG, PANEL, TILE, ORANGE, BLUE, GREEN, FG, MUTED;
+
+    private void loadAppearancePalette() {
+        BG = Appearance.bg(this);
+        PANEL = Appearance.panel(this);
+        TILE = Appearance.input(this);
+        ORANGE = Appearance.accent(this);
+        BLUE = Appearance.accent(this);
+        GREEN = Appearance.accent(this);
+        FG = Appearance.fg(this);
+        MUTED = Appearance.muted(this);
+    }
 
     private EditText dns, res, binds, env;
     private Spinner gpuMode;
@@ -60,11 +64,9 @@ public class SettingsActivity extends Activity {
                           boolean bold) {
         TextView t = new TextView(this);
         t.setText(value);
-        t.setTextSize(size);
+        t.setTextSize(size * Appearance.scale(this));
         t.setTextColor(color);
-        if (bold) {
-            t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        }
+        t.setTypeface(Appearance.typeface(this, bold));
         return t;
     }
 
@@ -411,6 +413,7 @@ public class SettingsActivity extends Activity {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        loadAppearancePalette();
 
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
@@ -527,6 +530,112 @@ public class SettingsActivity extends Activity {
         save.setText("✓   Save settings");
         save.setOnClickListener(v -> saveSettings());
         content.addView(save);
+
+
+        // APPEARANCE_SETTINGS_V1
+        section(content, "APPEARANCE",
+            "Personalize colors and readability");
+
+        content.addView(text("Color theme", 14, FG, true));
+
+        Spinner themeSpinner = new Spinner(this);
+        ArrayAdapter<String> themeAdapter = new ArrayAdapter<>(
+            this, android.R.layout.simple_spinner_item,
+            Appearance.THEME_LABELS);
+        themeAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item);
+        themeSpinner.setAdapter(themeAdapter);
+        themeSpinner.setBackground(shape(PANEL, 13, 0));
+
+        int themeIndex = 0;
+        for (int i = 0; i < Appearance.THEME_IDS.length; i++) {
+            if (Appearance.THEME_IDS[i].equals(Appearance.theme(this))) {
+                themeIndex = i;
+                break;
+            }
+        }
+        themeSpinner.setSelection(themeIndex);
+        content.addView(themeSpinner);
+
+        TextView fontLabel = text("Font family", 14, FG, true);
+        fontLabel.setPadding(0, dp(12), 0, 0);
+        content.addView(fontLabel);
+
+        Spinner fontSpinner = new Spinner(this);
+        ArrayAdapter<String> fontAdapter = new ArrayAdapter<>(
+            this, android.R.layout.simple_spinner_item,
+            Appearance.FONT_LABELS);
+        fontAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item);
+        fontSpinner.setAdapter(fontAdapter);
+        fontSpinner.setBackground(shape(PANEL, 13, 0));
+
+        int fontIndex = 0;
+        for (int i = 0; i < Appearance.FONT_IDS.length; i++) {
+            if (Appearance.FONT_IDS[i].equals(Appearance.font(this))) {
+                fontIndex = i;
+                break;
+            }
+        }
+        fontSpinner.setSelection(fontIndex);
+        content.addView(fontSpinner);
+
+        TextView sizeLabel = text(
+            "Text size: " + Appearance.textSize(this) + "%", 14, FG, true);
+        sizeLabel.setPadding(0, dp(12), 0, 0);
+        content.addView(sizeLabel);
+
+        android.widget.SeekBar sizeSeek = new android.widget.SeekBar(this);
+        sizeSeek.setMax(45);
+        sizeSeek.setProgress(Appearance.textSize(this) - 80);
+        sizeSeek.setProgressTintList(
+            android.content.res.ColorStateList.valueOf(ORANGE));
+        sizeSeek.setThumbTintList(
+            android.content.res.ColorStateList.valueOf(ORANGE));
+        content.addView(sizeSeek);
+
+        sizeSeek.setOnSeekBarChangeListener(
+            new android.widget.SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(
+                        android.widget.SeekBar bar, int progress,
+                        boolean fromUser) {
+                    sizeLabel.setText("Text size: " + (progress + 80) + "%");
+                }
+
+                @Override
+                public void onStartTrackingTouch(android.widget.SeekBar bar) {}
+
+                @Override
+                public void onStopTrackingTouch(android.widget.SeekBar bar) {}
+            });
+
+        Button applyAppearance = new Button(this);
+        applyAppearance.setText("Apply appearance");
+        applyAppearance.setOnClickListener(v -> {
+            int ti = themeSpinner.getSelectedItemPosition();
+            int fi = fontSpinner.getSelectedItemPosition();
+
+            if (ti < 0 || ti >= Appearance.THEME_IDS.length
+                    || fi < 0 || fi >= Appearance.FONT_IDS.length) {
+                Toast.makeText(this, "Choose a valid theme and font",
+                    Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            getSharedPreferences("gass_appearance", MODE_PRIVATE)
+                .edit()
+                .putString("theme", Appearance.THEME_IDS[ti])
+                .putString("font", Appearance.FONT_IDS[fi])
+                .putInt("text_size", sizeSeek.getProgress() + 80)
+                .apply();
+
+            Toast.makeText(this, "Appearance saved",
+                Toast.LENGTH_SHORT).show();
+            recreate();
+        });
+        content.addView(applyAppearance);
+        // END APPEARANCE_SETTINGS_V1
 
         section(content, "MAINTENANCE",
             "Destructive actions always require confirmation");

@@ -16,7 +16,13 @@ public class RadioActivity extends Activity {
     private static final String[] SERVERS = {
         "https://de1.api.radio-browser.info", "https://de2.api.radio-browser.info",
         "https://nl1.api.radio-browser.info", "https://at1.api.radio-browser.info" };
-    private static final String[] CHIPS = { "Top", "FR", "US", "GB", "DE", "ES", "IT", "TN", "DZ", "MA", "EG" };
+    private static final String[] CHIPS = {
+        "Top", "FR", "US", "GB", "DE", "ES", "IT",
+        "TN", "DZ", "MA", "EG", "LU", "BE", "CH", "CA",
+        "NL", "AT", "PT", "SE", "PL", "GR",
+        "AE", "SA", "QA", "JO", "LB", "IQ", "LY", "SD", "SO", "YE", "PS",
+        "L-Arabic", "L-French", "L-English", "L-Italian", "L-German"
+    };
 
     private LinearLayout list;
     private TextView status, now;
@@ -60,7 +66,8 @@ public class RadioActivity extends Activity {
         hs.setHorizontalScrollBarEnabled(false);
         LinearLayout cl = new LinearLayout(this);
         for (final String code : CHIPS) {
-            final TextView ch = GassUi.chip(this, code);
+            final TextView ch = GassUi.chip(this,
+                code.startsWith("L-") ? code.substring(2) : code);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
             lp.rightMargin = GassUi.dp(this, 8);
             ch.setOnClickListener(v -> {
@@ -112,7 +119,16 @@ public class RadioActivity extends Activity {
             try {
                 if (name != null && name.length() > 0) q.append("&name=").append(URLEncoder.encode(name, "UTF-8"));
             } catch (Exception ignored) {}
-            if (cc != null) q.append("&countrycode=").append(cc);
+            if (cc != null) {
+                if (cc.startsWith("L-")) {
+                    String lang = cc.substring(2);
+                    try {
+                        q.append("&language=").append(URLEncoder.encode(lang, "UTF-8"));
+                    } catch (Exception ignored) {}
+                } else {
+                    q.append("&countrycode=").append(cc);
+                }
+            }
             String body = null;
             for (String s : SERVERS) {
                 try { body = GassUi.httpGet(s + q); break; } catch (Exception e) { err = String.valueOf(e); }

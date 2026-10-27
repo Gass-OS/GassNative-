@@ -1,15 +1,19 @@
 package com.gass.gassnative;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.BitmapFactory;
 import android.graphics.Outline;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Xml;
+import android.view.animation.LinearInterpolator;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
@@ -19,6 +23,11 @@ import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.*;
 import java.io.File;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import org.xmlpull.v1.XmlPullParser;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -28,7 +37,21 @@ public class HomeActivity extends Activity {
     private static final int WHITE = 0xFFF4F7FF, SOFT = 0xFF9FB0D6;
     private GassUi.GradText timeV;
     private TextView dayV, dateV;
-    private GassUi.SecBar secBar;
+    // GASS NEWS TICKER
+    private FrameLayout tickerViewport;
+    private TextView tickerText;
+    private ValueAnimator tickerAnimator;
+    private float tickerSegmentWidth = 0f;
+    private final Handler tickerHandler = new Handler(Looper.getMainLooper());
+    private volatile boolean tickerActive = false;
+    private volatile boolean tickerFetchRunning = false;
+    private boolean tickerHasOnlineNews = false;
+
+    private final Runnable tickerRefresh = new Runnable() {
+        @Override public void run() {
+            fetchTickerNews();
+        }
+    };
     private View setupCard;
     private TextView updDot, updTitle, updDetail;
     private LinearLayout updCard;
@@ -51,7 +74,6 @@ public class HomeActivity extends Activity {
             dayV.setText(new SimpleDateFormat("EEEE", loc).format(d).toUpperCase(loc));
             dateV.setText(new SimpleDateFormat("d MMMM yyyy", loc).format(d));
             Calendar cal = Calendar.getInstance();
-            secBar.setFrac((cal.get(Calendar.SECOND) * 1000f + cal.get(Calendar.MILLISECOND)) / 60000f);
             clock.postDelayed(this, 500);
         }
     };
@@ -75,16 +97,256 @@ public class HomeActivity extends Activity {
         return c;
     }
 
-    private LinearLayout glass() { return card(0x240C1930, 0x445E789E); }
+    private LinearLayout glass() {
+        int panel = Appearance.panel(this);
+        int stroke = Appearance.accent(this);
+        return card(Color.argb(235, Color.red(panel),
+            Color.green(panel), Color.blue(panel)),
+            Color.argb(115, Color.red(stroke),
+                Color.green(stroke), Color.blue(stroke)));
+    }
 
     private TextView txt(String s, float sp, int color, String family, float spacing) {
         TextView t = new TextView(this);
         t.setText(s);
-        t.setTextSize(sp);
+        t.setTextSize(sp * Appearance.scale(this));
         t.setTextColor(color);
-        t.setTypeface(Typeface.create(family, Typeface.NORMAL));
+        t.setTypeface(Appearance.typeface(this, false));
         if (spacing != 0) t.setLetterSpacing(spacing);
         return t;
+    }
+
+
+    private void addNewsTicker(LinearLayout root) {
+        LinearLayout strip = new LinearLayout(this);
+        strip.setOrientation(LinearLayout.HORIZONTAL);
+        strip.setGravity(Gravity.CENTER_VERTICAL);
+        strip.setPadding(dp(7), dp(6), dp(10), dp(6));
+        strip.setBackground(box(0xFF111923, 0x665B718B, 13));
+        strip.setClipChildren(true);
+        strip.setClipToPadding(true);
+
+        TextView badge = txt("GASS NEWS", 10, Color.WHITE,
+            "sans-serif-medium", 0.04f);
+        badge.setGravity(Gravity.CENTER);
+        badge.setSingleLine(true);
+        badge.setPadding(dp(10), dp(7), dp(10), dp(7));
+        badge.setBackground(box(0xFFE44835, 0x00FFFFFF, 9));
+        strip.addView(badge, new LinearLayout.LayoutParams(-2, -2));
+
+        tickerViewport = new FrameLayout(this);
+        tickerViewport.setClipChildren(true);
+        tickerViewport.setClipToPadding(true);
+
+        LinearLayout.LayoutParams vp =
+            new LinearLayout.LayoutParams(0, -1, 1f);
+        vp.leftMargin = dp(10);
+        strip.addView(tickerViewport, vp);
+
+        tickerText = txt(
+            "GassNative • Debian ARM64 • Linux on Android • "
+            + "Fresh technology headlines appear when connected",
+            12.5f, 0xFFF4F7FF, "sans-serif-medium", 0
+        );
+        tickerText.setSingleLine(true);
+        tickerText.setIncludeFontPadding(false);
+        tickerText.setGravity(Gravity.CENTER_VERTICAL);
+
+        tickerViewport.addView(tickerText,
+            new FrameLayout.LayoutParams(-2, -1, Gravity.CENTER_VERTICAL));
+
+        LinearLayout.LayoutParams slp =
+            new LinearLayout.LayoutParams(-1, dp(44));
+        slp.topMargin = dp(8);
+        slp.bottomMargin = dp(12);
+        root.addView(strip, slp);
+
+        String cached = getSharedPreferences(
+            "gass_news_ticker", MODE_PRIVATE
+        ).getString("headlines", null);
+
+        if (cached != null && !cached.trim().isEmpty()) {
+            tickerHasOnlineNews = true;
+            setTickerMessage(cached);
+        }
+
+        tickerViewport.addOnLayoutChangeListener(
+            (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                if (right > left && tickerActive) restartTickerAnimation();
+            }
+        );
+    }
+
+    private void setTickerMessage(String message) {
+        if (tickerText == null || message == null
+                || message.trim().isEmpty()) return;
+
+        String segment = "   •   " + message.trim() + "   •   ";
+        tickerText.setText(segment + segment);
+        tickerSegmentWidth = tickerText.getPaint().measureText(segment);
+
+        if (tickerViewport != null) {
+            tickerViewport.post(this::restartTickerAnimation);
+        }
+    }
+
+    private void restartTickerAnimation() {
+        if (!tickerActive || tickerText == null || tickerViewport == null) return;
+
+        if (tickerAnimator != null) {
+            tickerAnimator.cancel();
+            tickerAnimator = null;
+        }
+
+        int viewportWidth = tickerViewport.getWidth();
+        if (viewportWidth <= 0 || tickerSegmentWidth <= 0f) return;
+
+        float segmentWidth = tickerSegmentWidth;
+        int textWidth = (int) Math.ceil(
+            tickerText.getPaint().measureText(
+                tickerText.getText().toString()
+            )
+        ) + dp(4);
+
+        tickerText.setWidth(textWidth);
+        tickerText.setTranslationX(0f);
+
+        // Two identical segments allow a seamless repeat after one segment.
+        tickerAnimator = ValueAnimator.ofFloat(0f, -segmentWidth);
+        tickerAnimator.setDuration(Math.max(
+            1L, (long) (segmentWidth * 1000f / Math.max(1, dp(36)))
+        ));
+        tickerAnimator.setInterpolator(new LinearInterpolator());
+        tickerAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        tickerAnimator.setRepeatMode(ValueAnimator.RESTART);
+        tickerAnimator.addUpdateListener(a -> {
+            if (tickerText != null) {
+                tickerText.setTranslationX((Float) a.getAnimatedValue());
+            }
+        });
+        tickerAnimator.start();
+    }
+
+    private void startNewsTicker() {
+        tickerActive = true;
+        if (tickerViewport != null) {
+            tickerViewport.post(this::restartTickerAnimation);
+        }
+        tickerHandler.removeCallbacks(tickerRefresh);
+        tickerHandler.post(tickerRefresh);
+    }
+
+    private void stopNewsTicker() {
+        tickerActive = false;
+        tickerHandler.removeCallbacks(tickerRefresh);
+        if (tickerAnimator != null) {
+            tickerAnimator.cancel();
+            tickerAnimator = null;
+        }
+    }
+
+    private void fetchTickerNews() {
+        if (!tickerActive || tickerFetchRunning) return;
+        tickerFetchRunning = true;
+
+        new Thread(() -> {
+            ArrayList<String> headlines = new ArrayList<>();
+
+            String[] feeds = {
+                "https://www.phoronix.com/rss.php",
+                "https://9to5google.com/feed/",
+                "https://www.omgubuntu.co.uk/feed/"
+            };
+
+            try {
+                for (String feed : feeds) {
+                    if (headlines.size() >= 10) break;
+                    try {
+                        headlines.addAll(readTickerFeed(feed, 10 - headlines.size()));
+                    } catch (Exception ignored) {
+                        // A feed can fail without preventing other feeds from loading.
+                    }
+                }
+            } finally {
+                tickerFetchRunning = false;
+
+                if (tickerActive) {
+                    if (!headlines.isEmpty()) {
+                        ArrayList<String> unique = new ArrayList<>();
+                        for (String h : headlines) {
+                            if (!unique.contains(h)) unique.add(h);
+                        }
+
+                        String joined = android.text.TextUtils.join("     •     ", unique);
+                        getSharedPreferences("gass_news_ticker", MODE_PRIVATE)
+                            .edit().putString("headlines", joined).apply();
+
+                        tickerHandler.post(() -> {
+                            if (!tickerActive) return;
+                            tickerHasOnlineNews = true;
+                            setTickerMessage(joined);
+                        });
+                    } else if (!tickerHasOnlineNews) {
+                        tickerHandler.post(() -> setTickerMessage(
+                            "Offline mode • Debian ARM64 • Linux on Android "
+                            + "• Open-source technology • GassNative"
+                        ));
+                    }
+
+                    tickerHandler.postDelayed(tickerRefresh, 30 * 60 * 1000L);
+                }
+            }
+        }, "GassNews-RSS").start();
+    }
+
+    private ArrayList<String> readTickerFeed(String address, int limit)
+            throws Exception {
+        ArrayList<String> result = new ArrayList<>();
+        HttpURLConnection connection =
+            (HttpURLConnection) new URL(address).openConnection();
+
+        connection.setConnectTimeout(7000);
+        connection.setReadTimeout(7000);
+        connection.setRequestProperty("User-Agent", "GassNative/0.6 RSS reader");
+        connection.setRequestProperty("Accept", "application/rss+xml, application/xml, text/xml");
+        connection.setInstanceFollowRedirects(true);
+
+        try {
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) return result;
+
+            try (InputStream input = connection.getInputStream()) {
+                XmlPullParser parser = Xml.newPullParser();
+                parser.setInput(input, null);
+
+                boolean inItem = false;
+                int event = parser.getEventType();
+
+                while (event != XmlPullParser.END_DOCUMENT
+                        && result.size() < limit) {
+                    if (event == XmlPullParser.START_TAG
+                            && "item".equalsIgnoreCase(parser.getName())) {
+                        inItem = true;
+                    } else if (event == XmlPullParser.END_TAG
+                            && "item".equalsIgnoreCase(parser.getName())) {
+                        inItem = false;
+                    } else if (inItem
+                            && event == XmlPullParser.START_TAG
+                            && "title".equalsIgnoreCase(parser.getName())) {
+                        String title = parser.nextText().trim();
+                        title = title.replaceAll("\\s+", " ");
+                        if (title.length() > 8 && !result.contains(title)) {
+                            result.add(title);
+                        }
+                    }
+                    event = parser.next();
+                }
+            }
+        } finally {
+            connection.disconnect();
+        }
+
+        return result;
     }
 
     @Override
@@ -102,18 +364,28 @@ public class HomeActivity extends Activity {
         head.setGravity(Gravity.CENTER_VERTICAL);
         head.setPadding(dp(12), dp(14), dp(16), dp(14));
         FrameLayout logo = new FrameLayout(this);
-        logo.addView(new GassUi.GlowTile(this, 0, 0xFFA78BFA, false), new FrameLayout.LayoutParams(-1, -1));
         ImageView ic = new ImageView(this);
-        try { ic.setImageDrawable(getPackageManager().getApplicationIcon(getApplicationInfo())); } catch (Throwable ignored) {}
+        try (java.io.InputStream imageStream =
+                getAssets().open("GassNative-PUMPKIN-R8.png")) {
+            ic.setImageBitmap(
+                android.graphics.BitmapFactory.decodeStream(imageStream));
+        } catch (Exception e) {
+            try {
+                ic.setImageDrawable(
+                    getPackageManager().getApplicationIcon(getApplicationInfo()));
+            } catch (Throwable ignored) {}
+            android.util.Log.e("GassNative", "Main logo image failed", e);
+        }
+        ic.setScaleType(ImageView.ScaleType.FIT_CENTER);
         ic.setOutlineProvider(new ViewOutlineProvider() {
             @Override
             public void getOutline(View v, Outline o) {
                 o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), v.getWidth() * 0.26f);
             }
         });
-        ic.setClipToOutline(true);
-        logo.addView(ic, new FrameLayout.LayoutParams(dp(56), dp(56), Gravity.CENTER));
-        head.addView(logo, new LinearLayout.LayoutParams(dp(88), dp(88)));
+        ic.setClipToOutline(false);
+        logo.addView(ic, new FrameLayout.LayoutParams(dp(104), dp(104), Gravity.CENTER));
+        head.addView(logo, new LinearLayout.LayoutParams(dp(124), dp(124)));
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setPadding(dp(8), 0, 0, 0);
@@ -123,7 +395,7 @@ public class HomeActivity extends Activity {
         title.setTextColor(Color.WHITE);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         col.addView(title, new LinearLayout.LayoutParams(-2, -2));
-        TextView pill = txt("PUMPKIN R2 \u2122", 10.5f, WHITE, "sans-serif-medium", 0.1f);
+        TextView pill = txt("PUMPKIN R8 \u2122", 11.5f, WHITE, "sans-serif-medium", 0.1f);
         pill.setBackground(box(0x33A78BFA, 0x66A78BFA, 12));
         pill.setPadding(dp(10), dp(3), dp(10), dp(3));
         LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(-2, -2);
@@ -149,7 +421,10 @@ public class HomeActivity extends Activity {
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         timeV = new GassUi.GradText(this, new int[]{0xFF58A6FF, 0xFF9878F5, 0xFFE05270});
-        timeV.setTextSize(70);
+        int screenWidthDp = getResources().getConfiguration().screenWidthDp;
+        timeV.setTextSize(screenWidthDp < 360 ? 52 :
+            screenWidthDp < 400 ? 60 :
+            screenWidthDp < 440 ? 66 : 70);
         timeV.setTextColor(Color.WHITE);
         timeV.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
         timeV.setIncludeFontPadding(false);
@@ -171,11 +446,12 @@ public class HomeActivity extends Activity {
         side.addView(dateV, new LinearLayout.LayoutParams(-2, -2));
         top.addView(side, new LinearLayout.LayoutParams(0, -2, 1));
         clk.addView(top);
-        secBar = new GassUi.SecBar(this);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(-1, dp(4));
-        blp.topMargin = dp(12);
-        clk.addView(secBar, blp);
         root.addView(clk);
+        addNewsTicker(root);
+        clk.setClickable(true);
+        clk.setFocusable(true);
+        clk.setOnClickListener(v -> showClockGlass());
+
 
         LinearLayout setup = card(0x26F97316, 0x66F97316);
         setup.setOrientation(LinearLayout.VERTICAL);
@@ -263,7 +539,7 @@ public class HomeActivity extends Activity {
             {"RADIO", 0xFF784331, 0xFF59283A, GassUi.RADIO, "radio"},
             {"MUSIC PLAYER", 0xFF58347E, 0xFF702D58, GassUi.MUSIC, "music"},
             {"ABOUT ME", 0xFF174E70, 0xFF293B78, GassUi.INFO, "about"},
-            {"TIPS & GUIDES", 0xFF175A66, 0xFF233D70, GassUi.BULB, "tips"},
+            {"TALKIE WALKIE", 0xFF175A66, 0xFF233D70, GassUi.MIC, "talkie"},
             {"GPS & MAPS", 0xFF167C73, 0xFF244A83, GassUi.INFO, "gps"},
             {"COMING SOON", 0xFF244E8B, 0xFF49316F, GassUi.SHIELD, "kali"},
             {"POWER OFF", 0xFF792B46, 0xFF481D45, GassUi.POWER, "power"},
@@ -316,8 +592,8 @@ public class HomeActivity extends Activity {
         LinearLayout foot = glass();
         foot.setOrientation(LinearLayout.VERTICAL);
         foot.setPadding(dp(16), dp(12), dp(16), dp(12));
-        foot.addView(txt("GASSNATIVE PUMPKIN V" + UpdateInfo.installed(this) + " \u2014 PRE-RELEASE APK\u2122", 11, WHITE, "sans-serif-medium", 0.04f));
-        TextView fb = txt("No ads. No tracking. No telemetry. Your smartphone, your freedom. GassNative lets you run Linux operating systems on Android without root access. Your device belongs to you \u2014 as it should be. \uD83D\uDC99", 11, SOFT, "sans-serif-light", 0);
+        foot.addView(txt("GASSNATIVE \u2022 PUMPKIN R8\u2122 \u2022 VERSION " + UpdateInfo.installed(this), 11, WHITE, "sans-serif-medium", 0.04f));
+        TextView fb = txt("Explore. Build. Innovate. Be Free.\n\nGassNative brings Debian GNU/Linux and an integrated XFCE4 desktop to Android without requiring root access or a separate display app. Manage Linux profiles, use terminal tools, explore desktop applications and customize your environment.\n\nNo ads. No tracking. No telemetry. Your device, your tools, your freedom. Built with passion by Aymen Gharsalli and powered by Gass-OS\u2122.", 11.5f, SOFT, "sans-serif-light", 0);
         fb.setPadding(0, dp(6), 0, 0);
         foot.addView(fb);
         root.addView(foot);
@@ -327,6 +603,213 @@ public class HomeActivity extends Activity {
         UpdateChecker.enforce(this);
     }
 
+
+
+    // GASS_DARK_GLASS_CLOCK
+    private void showClockGlass() {
+        final int panel = 0xFF0B1426;
+        final int border = 0xFF31517B;
+        final int blue = 0xFF67B7FF;
+        final int muted = 0xFF9FB0D6;
+        final Locale loc = Locale.getDefault();
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(20), dp(20), dp(20), dp(18));
+        content.setBackground(box(panel, border, 26));
+
+        LinearLayout heading = new LinearLayout(this);
+        heading.setGravity(Gravity.CENTER_VERTICAL);
+
+        LinearLayout headingText = new LinearLayout(this);
+        headingText.setOrientation(LinearLayout.VERTICAL);
+        TextView eyebrow = txt("GASSNATIVE  /  TIME", 10,
+            blue, "sans-serif-medium", 0.14f);
+        TextView headingTitle = txt("Dark Glass Clock", 20,
+            WHITE, "sans-serif-medium", 0);
+        headingText.addView(eyebrow);
+        headingText.addView(headingTitle);
+        heading.addView(headingText,
+            new LinearLayout.LayoutParams(0, -2, 1));
+
+        TextView close = txt("×", 28, muted, "sans-serif-light", 0);
+        close.setGravity(Gravity.CENTER);
+        close.setContentDescription("Close clock");
+        heading.addView(close, new LinearLayout.LayoutParams(dp(36), dp(40)));
+        content.addView(heading);
+
+        TextView liveTime = txt("--:--", 54, Color.WHITE,
+            "sans-serif-light", 0.01f);
+        liveTime.setGravity(Gravity.CENTER);
+        liveTime.setPadding(0, dp(14), 0, 0);
+        content.addView(liveTime);
+
+        TextView fullDate = txt("", 14, blue,
+            "sans-serif-medium", 0.01f);
+        fullDate.setGravity(Gravity.CENTER);
+        fullDate.setPadding(0, 0, 0, dp(16));
+        content.addView(fullDate);
+
+        LinearLayout calendarCard = new LinearLayout(this);
+        calendarCard.setOrientation(LinearLayout.VERTICAL);
+        calendarCard.setPadding(dp(10), dp(10), dp(10), dp(10));
+        calendarCard.setBackground(box(0xFF111F35, 0x443E73B8, 18));
+
+        LinearLayout monthRow = new LinearLayout(this);
+        monthRow.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView previous = txt("‹", 28, blue, "sans-serif-light", 0);
+        previous.setGravity(Gravity.CENTER);
+        monthRow.addView(previous,
+            new LinearLayout.LayoutParams(dp(42), dp(40)));
+
+        TextView monthTitle = txt("", 15, WHITE,
+            "sans-serif-medium", 0);
+        monthTitle.setGravity(Gravity.CENTER);
+        monthRow.addView(monthTitle,
+            new LinearLayout.LayoutParams(0, -2, 1));
+
+        TextView next = txt("›", 28, blue, "sans-serif-light", 0);
+        next.setGravity(Gravity.CENTER);
+        monthRow.addView(next,
+            new LinearLayout.LayoutParams(dp(42), dp(40)));
+        calendarCard.addView(monthRow);
+
+        GridLayout calendarGrid = new GridLayout(this);
+        calendarGrid.setColumnCount(7);
+        calendarGrid.setUseDefaultMargins(false);
+        LinearLayout.LayoutParams gridLp =
+            new LinearLayout.LayoutParams(-1, -2);
+        gridLp.topMargin = dp(5);
+        calendarCard.addView(calendarGrid, gridLp);
+        content.addView(calendarCard);
+
+        TextView hint = txt("Tap the clock card anytime to open this view",
+            10, muted, "sans-serif", 0);
+        hint.setGravity(Gravity.CENTER);
+        hint.setPadding(0, dp(12), 0, 0);
+        content.addView(hint);
+
+        final Calendar shownMonth = Calendar.getInstance();
+        shownMonth.set(Calendar.DAY_OF_MONTH, 1);
+        renderClockCalendar(calendarGrid, monthTitle, shownMonth);
+
+        previous.setOnClickListener(v -> {
+            shownMonth.add(Calendar.MONTH, -1);
+            renderClockCalendar(calendarGrid, monthTitle, shownMonth);
+        });
+        next.setOnClickListener(v -> {
+            shownMonth.add(Calendar.MONTH, 1);
+            renderClockCalendar(calendarGrid, monthTitle, shownMonth);
+        });
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setView(content)
+            .create();
+
+        final Handler popupClock = new Handler(Looper.getMainLooper());
+        final Runnable[] ticker = new Runnable[1];
+        ticker[0] = new Runnable() {
+            @Override
+            public void run() {
+                Date now = new Date();
+                liveTime.setText(
+                    new SimpleDateFormat("HH:mm:ss", loc).format(now));
+                fullDate.setText(
+                    new SimpleDateFormat("EEEE, d MMMM yyyy", loc)
+                        .format(now));
+                popupClock.postDelayed(this, 500);
+            }
+        };
+
+        close.setOnClickListener(v -> dialog.dismiss());
+        dialog.setOnDismissListener(d ->
+            popupClock.removeCallbacks(ticker[0]));
+        dialog.setOnShowListener(d -> {
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(
+                    android.R.color.transparent);
+                dialog.getWindow().setDimAmount(0.65f);
+                dialog.getWindow().setLayout(
+                    getResources().getDisplayMetrics().widthPixels - dp(32),
+                    -2);
+            }
+        });
+        dialog.show();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(
+                android.R.color.transparent);
+            dialog.getWindow().setDimAmount(0.65f);
+            dialog.getWindow().setLayout(
+                getResources().getDisplayMetrics().widthPixels - dp(32),
+                -2);
+        }
+        popupClock.post(ticker[0]);
+    }
+
+    private void renderClockCalendar(
+        GridLayout grid, TextView monthTitle, Calendar shownMonth) {
+
+        Locale loc = Locale.getDefault();
+        monthTitle.setText(
+            new SimpleDateFormat("MMMM yyyy", loc)
+                .format(shownMonth.getTime()));
+
+        grid.removeAllViews();
+        String[] weekdays = {"S", "M", "T", "W", "T", "F", "S"};
+
+        for (int i = 0; i < 7; i++) {
+            TextView label = txt(weekdays[i], 11, 0xFF7FBFFF,
+                "sans-serif-medium", 0);
+            label.setGravity(Gravity.CENTER);
+            GridLayout.LayoutParams lp = new GridLayout.LayoutParams(
+                GridLayout.spec(GridLayout.UNDEFINED, 1f),
+                GridLayout.spec(i, 1f));
+            lp.width = 0;
+            lp.height = dp(30);
+            grid.addView(label, lp);
+        }
+
+        Calendar first = (Calendar) shownMonth.clone();
+        first.set(Calendar.DAY_OF_MONTH, 1);
+        int offset = first.get(Calendar.DAY_OF_WEEK)
+            - Calendar.SUNDAY;
+        int days = shownMonth.getActualMaximum(Calendar.DAY_OF_MONTH);
+        Calendar today = Calendar.getInstance();
+
+        for (int i = 0; i < offset + days; i++) {
+            final int day = i - offset + 1;
+            TextView cell;
+
+            if (day < 1) {
+                cell = txt("", 12, WHITE, "sans-serif", 0);
+            } else {
+                cell = txt(String.valueOf(day), 12, WHITE,
+                    "sans-serif", 0);
+                if (shownMonth.get(Calendar.YEAR) ==
+                        today.get(Calendar.YEAR)
+                    && shownMonth.get(Calendar.MONTH) ==
+                        today.get(Calendar.MONTH)
+                    && day == today.get(Calendar.DAY_OF_MONTH)) {
+                    cell.setBackground(box(0xFF245CA8, 0xFF67B7FF, 12));
+                    cell.setTextColor(Color.WHITE);
+                    cell.setTypeface(
+                        Typeface.create("sans-serif-medium", Typeface.BOLD));
+                } else if (i % 7 == 0 || i % 7 == 6) {
+                    cell.setTextColor(0xFF9BBBE7);
+                }
+            }
+
+            cell.setGravity(Gravity.CENTER);
+            GridLayout.LayoutParams lp = new GridLayout.LayoutParams(
+                GridLayout.spec(GridLayout.UNDEFINED, 1f),
+                GridLayout.spec(i % 7, 1f));
+            lp.width = 0;
+            lp.height = dp(34);
+            grid.addView(cell, lp);
+        }
+    }
 
     private void showFirstLaunchSetup() {
         android.content.SharedPreferences prefs =
@@ -451,7 +934,7 @@ public class HomeActivity extends Activity {
             if (label.equals("RADIO")) return "RADIO";
             if (label.equals("MUSIC PLAYER")) return "LECTEUR MUSICAL";
             if (label.equals("ABOUT ME")) return "À PROPOS";
-            if (label.equals("TIPS & GUIDES")) return "CONSEILS & GUIDES";
+            if (label.equals("TALKIE WALKIE")) return "TALKIE-WALKIE";
             if (label.equals("COMING SOON")) return "BIENTÔT";
             if (label.equals("POWER OFF")) return "ÉTEINDRE";
             if (label.equals("GASS AI")) return "IA GASS";
@@ -465,7 +948,7 @@ public class HomeActivity extends Activity {
             if (label.equals("RADIO")) return "الراديو";
             if (label.equals("MUSIC PLAYER")) return "مشغل الموسيقى";
             if (label.equals("ABOUT ME")) return "من أنا";
-            if (label.equals("TIPS & GUIDES")) return "نصائح وإرشادات";
+            if (label.equals("TALKIE WALKIE")) return "اتصال لاسلكي";
             if (label.equals("COMING SOON")) return "قريباً";
             if (label.equals("POWER OFF")) return "إيقاف التشغيل";
             if (label.equals("GASS AI")) return "مساعد GASS";
@@ -500,6 +983,10 @@ public class HomeActivity extends Activity {
     }
 
     private View tile(String label, int c1, int c2, int glyph, final String code) {
+        if (!"gass_orange".equals(Appearance.theme(this))) {
+            c1 = Appearance.accent(this);
+            c2 = Appearance.panel(this);
+        }
         LinearLayout t = new LinearLayout(this);
         t.setOrientation(LinearLayout.VERTICAL);
         t.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -913,7 +1400,8 @@ public class HomeActivity extends Activity {
             startActivity(new Intent(this, DistroActivity.class));
             return;
         }
-        startActivity(new Intent(this, c));
+        if (c == DesktopActivity.class) DesktopActivity.launch(this, "xfce", null, null);
+        else startActivity(new Intent(this, c));
     }
 
     private void go(String c) {
@@ -936,11 +1424,39 @@ public class HomeActivity extends Activity {
             case "music": startActivity(new Intent(this, MusicActivity.class)); break;
             case "ai": startActivity(new Intent(this, AiActivity.class)); break;
             case "about": startActivity(new Intent(this, AboutActivity.class)); break;
-            case "tips": startActivity(new Intent(this, TipsActivity.class)); break;
+            case "talkie": startActivity(new Intent(this, TalkieWalkieActivity.class)); break;
             case "ubuntu": startActivity(new Intent(this, DistroActivity.class)); break;
             case "kali": startActivity(new Intent(this, DistroActivity.class)); break;
             case "power": powerOff(); break;
         }
+    }
+
+    private void launchOpenPoc() {
+        final String packageName = "org.openpoc.client";
+        try {
+            Intent launch = getPackageManager()
+                .getLaunchIntentForPackage(packageName);
+            if (launch != null) {
+                startActivity(launch);
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        new AlertDialog.Builder(this)
+            .setTitle("GassNative Talkie Walkie")
+            .setMessage("OpenPOC is not installed yet. Open its official installation page?")
+            .setPositiveButton("Open page", (d, w) -> {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://openpoc.org/install")));
+                } catch (Exception e) {
+                    new AlertDialog.Builder(this)
+                        .setMessage("Could not open the installation page.")
+                        .setPositiveButton("OK", null).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     private void powerOff() {
@@ -958,6 +1474,7 @@ public class HomeActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        startNewsTicker();
         setupCard.setVisibility(debianReady() ? View.GONE : View.VISIBLE);
         UpdateInfo.check(this, false, this::renderUpdate);
         clock.removeCallbacks(tick);
@@ -966,6 +1483,7 @@ public class HomeActivity extends Activity {
 
     @Override
     protected void onPause() {
+        stopNewsTicker();
         clock.removeCallbacks(tick);
         super.onPause();
     }

@@ -14,11 +14,66 @@ import java.util.ArrayList;
 public class TvActivity extends Activity {
     private static final String BASE = "https://iptv-org.github.io/iptv/";
     private static final String[][] SRC = {
-        {"FR", "countries/fr"}, {"US", "countries/us"}, {"UK", "countries/uk"}, {"DE", "countries/de"},
-        {"ES", "countries/es"}, {"IT", "countries/it"}, {"TN", "countries/tn"}, {"DZ", "countries/dz"},
-        {"MA", "countries/ma"}, {"EG", "countries/eg"}, {"News", "categories/news"}, {"Sports", "categories/sports"},
-        {"Kids", "categories/kids"}, {"Music", "categories/music"}, {"Movies", "categories/movies"},
-        {"Docs", "categories/documentary"} };
+        {"FR", "countries/fr"}, {"US", "countries/us"}, {"UK", "countries/gb"},
+        {"DE", "countries/de"}, {"ES", "countries/es"}, {"IT", "countries/it"},
+        {"TN", "countries/tn"}, {"DZ", "countries/dz"}, {"MA", "countries/ma"},
+        {"EG", "countries/eg"}, {"LU", "countries/lu"}, {"BE", "countries/be"},
+        {"CH", "countries/ch"}, {"CA", "countries/ca"}, {"NL", "countries/nl"},
+        {"AT", "countries/at"}, {"PT", "countries/pt"}, {"SE", "countries/se"},
+        {"PL", "countries/pl"}, {"GR", "countries/gr"}, {"AE", "countries/ae"},
+        {"SA", "countries/sa"}, {"QA", "countries/qa"}, {"JO", "countries/jo"},
+        {"LB", "countries/lb"}, {"IQ", "countries/iq"}, {"LY", "countries/ly"},
+        {"PS", "countries/ps"},
+        {"TR", "countries/tr"}, {"GR", "countries/gr"},
+        {"RO", "countries/ro"}, {"IN", "countries/in"},
+        {"JP", "countries/jp"}, {"BR", "countries/br"},
+        {"MX", "countries/mx"}, {"AU", "countries/au"},
+        {"ZA", "countries/za"}, {"NG", "countries/ng"},
+        {"KR", "countries/kr"}, {"ID", "countries/id"},
+        {"PK", "countries/pk"}, {"AF", "countries/af"},
+        {"KW", "countries/kw"}, {"OM", "countries/om"},
+        {"BH", "countries/bh"}, {"SY", "countries/sy"},
+        {"IR", "countries/ir"}, {"CY", "countries/cy"},
+        {"CZ", "countries/cz"}, {"HU", "countries/hu"},
+        {"HR", "countries/hr"}, {"RS", "countries/rs"},
+        {"UA", "countries/ua"}, {"IE", "countries/ie"},
+        {"NO", "countries/no"}, {"DK", "countries/dk"},
+        {"FI", "countries/fi"}, {"AR", "countries/ar"},
+        {"CL", "countries/cl"}, {"CO", "countries/co"},
+        {"Worldwide", "regions/ww"},
+        {"Arab World", "regions/arab"},
+        {"Maghreb", "regions/maghreb"},
+        {"Middle East", "regions/mideast"},
+        {"Benelux", "regions/benelux"},
+        {"Europe", "regions/europe"}, {"Africa", "regions/africa"},
+        {"Asia", "regions/asia"}, {"Americas", "regions/americas"},
+        {"Arabic", "languages/ara"}, {"French", "languages/fra"},
+        {"English", "languages/eng"}, {"Italian", "languages/ita"},
+        {"German", "languages/deu"}, {"Turkish", "languages/tur"},
+        {"Spanish", "languages/spa"}, {"Portuguese", "languages/por"},
+        {"Hindi", "languages/hin"}, {"Japanese", "languages/jpn"},
+        {"News", "categories/news"}, {"Sports", "categories/sports"},
+        {"Entertainment", "categories/entertainment"},
+        {"General", "categories/general"},
+        {"Animation", "categories/animation"},
+        {"Series", "categories/series"},
+        {"Family", "categories/family"},
+        {"Comedy", "categories/comedy"},
+        {"Culture", "categories/culture"},
+        {"Education", "categories/education"},
+        {"Documentary", "categories/documentary"},
+        {"Science", "categories/science"},
+        {"Travel", "categories/travel"},
+        {"Cooking", "categories/cooking"},
+        {"Business", "categories/business"},
+        {"Lifestyle", "categories/lifestyle"},
+        {"Kids", "categories/kids"}, {"Music", "categories/music"},
+        {"Movies", "categories/movies"},
+        {"Religious", "categories/religious"},
+        {"Weather", "categories/weather"},
+        {"Classic", "categories/classic"},
+        {"Public", "categories/public"}
+    };
 
     private LinearLayout root, list;
     private View header, chipsScroll, listScroll;
@@ -29,6 +84,111 @@ public class TvActivity extends Activity {
     private boolean full;
     private int normalH, pad;
     private final ArrayList<TextView> chips = new ArrayList<>();
+
+    private String sourceIcon(String label) {
+        switch (label) {
+            case "FR": return "🇫🇷";
+            case "US": return "🇺🇸";
+            case "UK": return "🇬🇧";
+            case "DE": return "🇩🇪";
+            case "ES": return "🇪🇸";
+            case "IT": return "🇮🇹";
+            case "TN": return "🇹🇳";
+            case "DZ": return "🇩🇿";
+            case "MA": return "🇲🇦";
+            case "EG": return "🇪🇬";
+            case "LU": return "🇱🇺";
+            case "BE": return "🇧🇪";
+            case "CH": return "🇨🇭";
+            case "CA": return "🇨🇦";
+            case "NL": return "🇳🇱";
+            case "AT": return "🇦🇹";
+            case "PT": return "🇵🇹";
+            case "SE": return "🇸🇪";
+            case "PL": return "🇵🇱";
+            case "GR": return "🇬🇷";
+            case "TR": return "🇹🇷";
+            case "RO": return "🇷🇴";
+            case "IN": return "🇮🇳";
+            case "JP": return "🇯🇵";
+            case "BR": return "🇧🇷";
+            case "MX": return "🇲🇽";
+            case "AU": return "🇦🇺";
+            case "ZA": return "🇿🇦";
+            case "NG": return "🇳🇬";
+            case "KR": return "🇰🇷";
+            case "PK": return "🇵🇰";
+            case "SA": return "🇸🇦";
+            case "AE": return "🇦🇪";
+            case "QA": return "🇶🇦";
+            case "KW": return "🇰🇼";
+            case "OM": return "🇴🇲";
+            case "BH": return "🇧🇭";
+            case "JO": return "🇯🇴";
+            case "LB": return "🇱🇧";
+            case "IQ": return "🇮🇶";
+            case "LY": return "🇱🇾";
+            case "PS": return "🇵🇸";
+            case "CY": return "🇨🇾";
+            case "CZ": return "🇨🇿";
+            case "HU": return "🇭🇺";
+            case "HR": return "🇭🇷";
+            case "RS": return "🇷🇸";
+            case "UA": return "🇺🇦";
+            case "IE": return "🇮🇪";
+            case "NO": return "🇳🇴";
+            case "DK": return "🇩🇰";
+            case "FI": return "🇫🇮";
+            case "AR": return "🇦🇷";
+            case "CL": return "🇨🇱";
+            case "CO": return "🇨🇴";
+            case "Europe": return "🌍";
+            case "Africa": return "🌍";
+            case "Asia": return "🌏";
+            case "Americas": return "🌎";
+            case "Worldwide": return "🌐";
+            case "Arab World": return "🌙";
+            case "Maghreb": return "🌙";
+            case "Middle East": return "🕌";
+            case "Benelux": return "🏙️";
+            case "Arabic": return "🗣️";
+            case "French": return "🥐";
+            case "English": return "🔤";
+            case "Italian": return "🍕";
+            case "German": return "🗣️";
+            case "Turkish": return "🧿";
+            case "Spanish": return "💃";
+            case "Portuguese": return "🎶";
+            case "Hindi": return "🗣️";
+            case "Japanese": return "🗾";
+            case "News": return "📰";
+            case "Sports": return "⚽";
+            case "Kids": return "🧸";
+            case "Music": return "🎵";
+            case "Movies": return "🎬";
+            case "Docs":
+            case "Documentary": return "🎥";
+            case "Entertainment": return "🎭";
+            case "General": return "📺";
+            case "Animation": return "🎨";
+            case "Series": return "🍿";
+            case "Family": return "👨‍👩‍👧‍👦";
+            case "Comedy": return "😂";
+            case "Culture": return "🎭";
+            case "Education": return "🎓";
+            case "Science": return "🔬";
+            case "Travel": return "✈️";
+            case "Cooking": return "🍳";
+            case "Business": return "💼";
+            case "Lifestyle": return "✨";
+            case "Religious": return "🕊️";
+            case "Weather": return "🌦️";
+            case "Classic": return "📻";
+            case "Public": return "📡";
+            default: return "📺";
+        }
+    }
+
 
     @Override
     protected void onCreate(Bundle b) {
@@ -66,7 +226,7 @@ public class TvActivity extends Activity {
         hs.setHorizontalScrollBarEnabled(false);
         LinearLayout cl = new LinearLayout(this);
         for (final String[] src : SRC) {
-            final TextView ch = GassUi.chip(this, src[0]);
+            final TextView ch = GassUi.chip(this, sourceIcon(src[0]) + "  " + src[0]);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
             lp.rightMargin = GassUi.dp(this, 8);
             ch.setOnClickListener(v -> {

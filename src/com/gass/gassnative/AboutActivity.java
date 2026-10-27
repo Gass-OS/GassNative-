@@ -69,6 +69,14 @@ public class AboutActivity extends Activity {
         c.addView(b);
     }
 
+    private void openExternal(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(this, "Unable to open link", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -121,7 +129,7 @@ public class AboutActivity extends Activity {
         page.addView(ver);
 
         TextView slogan = text(
-            "Your Linux desktop. Your Android.",
+            "PUMPKIN R8\u2122  |  Explore. Build. Innovate. Be Free.",
             14, MUTED
         );
         slogan.setGravity(Gravity.CENTER);
@@ -133,12 +141,18 @@ public class AboutActivity extends Activity {
         LinearLayout description = card();
 
         TextView desc = text(
-            "GassNative brings a complete Debian GNU/Linux "
-          + "desktop environment directly to Android.\n\n"
-          + "Powered by PRoot and XFCE4, it provides an "
-          + "integrated graphical desktop experience "
-          + "without requiring root access or a separate "
-          + "display application.",
+            "GassNative PUMPKIN R8\u2122 brings Linux closer to your pocket. "
+          + "Run a Debian 13 (Trixie) ARM64 environment on Android "
+          + "without root access.\n\n"
+          + "Use the integrated XFCE4 desktop, terminal tools, "
+          + "Linux profiles, system information and configurable "
+          + "settings from one Android app. The integrated display "
+          + "is designed to avoid requiring a separate display app.\n\n"
+          + "Explore Linux applications, customize your workspace "
+          + "and build your mobile development environment. "
+          + "GassNative is an evolving Gass-OS project made for "
+          + "developers, makers and Linux enthusiasts.\n\n"
+          + "No ads. No telemetry. Your device, your freedom.",
             14, WHITE
         );
         desc.setLineSpacing(dp(4), 1f);
@@ -177,6 +191,33 @@ public class AboutActivity extends Activity {
         });
 
         dev.addView(github);
+
+        TextView youtube = text(
+            "\u25B6  YouTube  \u2022  LuxTrust OS  \u2197",
+            15, BLUE
+        );
+        youtube.setPadding(0, dp(8), 0, dp(8));
+        youtube.setOnClickListener(v -> openExternal(
+            "https://www.youtube.com/results?search_query=LuxTrust+OS"));
+        dev.addView(youtube);
+
+        TextView telegram = text(
+            "\u2708  Telegram  \u2022  Gass-OS  \u2197",
+            15, BLUE
+        );
+        telegram.setPadding(0, dp(8), 0, dp(8));
+        telegram.setOnClickListener(v ->
+            openExternal("https://t.me/Gassos94"));
+        dev.addView(telegram);
+
+        TextView projectSite = text(
+            "\uD83C\uDF10  Gass-OS on GitHub  \u2197",
+            15, BLUE
+        );
+        projectSite.setPadding(0, dp(8), 0, dp(4));
+        projectSite.setOnClickListener(v ->
+            openExternal("https://github.com/Gass-OS"));
+        dev.addView(projectSite);
 
         section("Open-source credits");
 

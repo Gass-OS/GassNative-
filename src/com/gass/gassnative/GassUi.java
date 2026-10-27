@@ -18,7 +18,7 @@ public final class GassUi {
     public static final int BLUE = 0xFF6EC1FF;
     public static final int TEXT = 0xFFF4F7FF;
     public static final int MUTED = 0xFF9FB0D6;
-    public static final int TV = 0, RADIO = 1, GAME = 2, PLAY = 3, STOP = 4, BACK = 5, SEARCH = 6, DESKTOP = 7, MUSIC = 8, TERMINAL = 9, SETTINGS = 10, INFO = 11, PROFILE = 12, POWER = 13, BULB = 14, WINDOWS = 15, PLANET = 16, SHIELD = 17, PAUSE = 18, CLOSE = 19;
+    public static final int TV = 0, RADIO = 1, GAME = 2, PLAY = 3, STOP = 4, BACK = 5, SEARCH = 6, DESKTOP = 7, MUSIC = 8, TERMINAL = 9, SETTINGS = 10, INFO = 11, PROFILE = 12, POWER = 13, BULB = 14, WINDOWS = 15, PLANET = 16, SHIELD = 17, PAUSE = 18, CLOSE = 19, MIC = 20;
 
     private GassUi() {}
 
@@ -27,7 +27,8 @@ public final class GassUi {
     }
 
     public static void setup(Activity a) {
-        a.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0xFF05070E));
+        a.getWindow().setBackgroundDrawable(
+            new android.graphics.drawable.ColorDrawable(Appearance.bg(a)));
         a.getWindow().setStatusBarColor(Color.TRANSPARENT);
         a.getWindow().setNavigationBarColor(Color.TRANSPARENT);
         a.getWindow().getDecorView().setSystemUiVisibility(0);
@@ -48,9 +49,9 @@ public final class GassUi {
     public static TextView text(Context c, String s, float sp, int color, boolean bold) {
         TextView t = new TextView(c);
         t.setText(s);
-        t.setTextSize(sp);
+        t.setTextSize(sp * Appearance.scale(c));
         t.setTextColor(color);
-        if (bold) t.setTypeface(null, android.graphics.Typeface.BOLD);
+        t.setTypeface(Appearance.typeface(c, bold));
         return t;
     }
 
@@ -122,7 +123,35 @@ public final class GassUi {
     }
 
     public static class SpaceView extends View {
-        private static final int[] BC = {0x664176FF, 0x553066CC, 0x665C1735, 0x66451B40, 0x554A1630};
+        private int[] glowColors() {
+            switch (Appearance.theme(getContext())) {
+                case "kali_blue":
+                    return new int[] {
+                        0x664A91FF, 0x55436DCE, 0x664A5CC8,
+                        0x55404F91, 0x554A86D0
+                    };
+                case "matrix_green":
+                    return new int[] {
+                        0x6640FF83, 0x5530B85F, 0x6640A85A,
+                        0x55408040, 0x5540D878
+                    };
+                case "retro_terminal":
+                    return new int[] {
+                        0x665BFF45, 0x5540B830, 0x6651A83A,
+                        0x55408030, 0x5540D850
+                    };
+                case "glass":
+                    return new int[] {
+                        0x665EBEFF, 0x555B8CE0, 0x665E83C8,
+                        0x554A9AAE, 0x555B9FE0
+                    };
+                default:
+                    return new int[] {
+                        0x66FF914B, 0x55D96638, 0x66B84C25,
+                        0x554D2938, 0x55E58A45
+                    };
+            }
+        }
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final long t0 = System.nanoTime();
         private final java.util.Random rnd = new java.util.Random(11);
@@ -141,8 +170,36 @@ public final class GassUi {
 
         @Override
         protected void onSizeChanged(int w, int h, int ow, int oh) {
+            int top, middle, bottom;
+            switch (Appearance.theme(getContext())) {
+                case "kali_blue":
+                    top = 0xFF050D20;
+                    middle = 0xFF10284B;
+                    bottom = 0xFF101A38;
+                    break;
+                case "matrix_green":
+                    top = 0xFF020904;
+                    middle = 0xFF062414;
+                    bottom = 0xFF03130B;
+                    break;
+                case "retro_terminal":
+                    top = 0xFF050A04;
+                    middle = 0xFF14250D;
+                    bottom = 0xFF091307;
+                    break;
+                case "glass":
+                    top = 0xFF080E19;
+                    middle = 0xFF1B3048;
+                    bottom = 0xFF151B32;
+                    break;
+                default:
+                    top = 0xFF100B13;
+                    middle = 0xFF24152C;
+                    bottom = 0xFF381720;
+                    break;
+            }
             bg = new android.graphics.LinearGradient(0, 0, 0, h,
-                new int[]{0xFF05070E, 0xFF0B1934, 0xFF321020}, new float[]{0f, 0.55f, 1f},
+                new int[]{top, middle, bottom}, new float[]{0f, 0.55f, 1f},
                 android.graphics.Shader.TileMode.CLAMP);
             int n = 48;
             sx = new float[n]; sy = new float[n]; sr = new float[n]; sph = new float[n]; sv = new float[n]; sc = new int[n];
@@ -162,10 +219,12 @@ public final class GassUi {
                 {0.30f, 0.75f, 0.10f, 0.07f, 0.025f, 3.1f, 0.55f},
                 {0.80f, 0.85f, 0.08f, 0.06f, 0.019f, 4.4f, 0.48f},
                 {0.55f, 0.50f, 0.07f, 0.05f, 0.015f, 5.5f, 0.35f} };
+            int[] colors = glowColors();
             for (int i = 0; i < 5; i++) {
                 float[] k = cfg[i];
                 bl[i] = new float[]{k[0] * w, k[1] * h, k[2] * w, k[3] * h, k[4], k[5], k[6] * m};
-                glow[i] = new android.graphics.RadialGradient(0, 0, bl[i][6], BC[i], BC[i] & 0x00FFFFFF,
+                glow[i] = new android.graphics.RadialGradient(0, 0, bl[i][6],
+                    colors[i], colors[i] & 0x00FFFFFF,
                     android.graphics.Shader.TileMode.CLAMP);
             }
         }
@@ -287,7 +346,10 @@ public final class GassUi {
             p.setShader(null);
             p.setColor(0x22FFFFFF);
             c.drawRoundRect(new RectF(0, 0, w, h), h / 2, h / 2, p);
-            p.setShader(new android.graphics.LinearGradient(0, 0, w, 0, new int[]{0xFF58A6FF, 0xFF8769E8, 0xFFE05270}, null, android.graphics.Shader.TileMode.CLAMP));
+            p.setShader(new android.graphics.LinearGradient(
+                0, 0, w, 0,
+                new int[]{0xFFFF6A00, 0xFFFF9D00, 0xFFFFD166, 0xFFFF6A00},
+                null, android.graphics.Shader.TileMode.CLAMP));
             c.drawRoundRect(new RectF(0, 0, Math.max(h, w * frac), h), h / 2, h / 2, p);
             p.setShader(null);
         }
@@ -337,6 +399,16 @@ public final class GassUi {
                     c.drawLine(14 * u, 13 * u, 18 * u, 13 * u, p);
                     c.drawLine(14 * u, 17 * u, 18 * u, 17 * u, p);
                     break;
+                case MIC:
+                    // Line-art microphone for the home tile.
+                    c.drawRoundRect(new RectF(8 * u, 3 * u, 16 * u, 15 * u),
+                                    4 * u, 4 * u, p);
+                    c.drawArc(new RectF(5 * u, 7 * u, 19 * u, 19 * u),
+                              0, 180, false, p);
+                    c.drawLine(12 * u, 19 * u, 12 * u, 22 * u, p);
+                    c.drawLine(8 * u, 22 * u, 16 * u, 22 * u, p);
+                    break;
+
                 case GAME:
                     c.drawRoundRect(new RectF(2 * u, 7 * u, 22 * u, 18 * u), 5 * u, 5 * u, p);
                     c.drawLine(6 * u, 12.5f * u, 10 * u, 12.5f * u, p);
@@ -574,6 +646,18 @@ public final class GassUi {
                     fill(c, WHITE); c.drawCircle(17, 12, 1, q);
                     c.drawCircle(17, 16, 1, q);
                     break;
+                case MIC:
+                    // Colorful microphone, matching GassNative's icon family.
+                    line(c, CYAN, 1.8f);
+                    round(c, 8, 2.5f, 16, 15, 4, PURPLE);
+                    line(c, WHITE, 1.6f);
+                    c.drawLine(12, 5, 12, 11, q);
+                    line(c, CYAN, 1.8f);
+                    c.drawArc(new RectF(5, 6, 19, 19), 0, 180, false, q);
+                    c.drawLine(12, 19, 12, 22, q);
+                    c.drawLine(8, 22, 16, 22, q);
+                    break;
+
 
                 case GAME:
                     round(c, 2, 7, 22, 19, 6, BLUE);

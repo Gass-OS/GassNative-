@@ -161,12 +161,17 @@ public class WindowsVmActivity extends Activity {
           + "{ echo 'X11 display :1 did not start'; exit 1; }; "
           + "[ -r /home/user/Download/w7.qcow2 ] || "
           + "{ echo 'Cannot read /home/user/Download/w7.qcow2'; exit 1; }; "
+          + "command -v su >/dev/null 2>&1 || { echo 'Debian su command missing'; exit 127; }; "
+          + "exec su user -s /bin/bash -c '"
+          + "export DISPLAY=:1.0; unset WAYLAND_DISPLAY; "
+          + "export GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb HOME=/home/user USER=user "
+          + "XDG_RUNTIME_DIR=/tmp/runtime-user; "
+          + "mkdir -p \"$XDG_RUNTIME_DIR\"; chmod 700 \"$XDG_RUNTIME_DIR\"; "
           + "exec qemu-system-i386 -machine pc -cpu qemu64 -smp 2 -m 1024 "
           + "-drive file=/home/user/Download/w7.qcow2,format=qcow2 "
           + "-vga std -device AC97 "
           + "-netdev user,id=net0 -device e1000,netdev=net0 "
-          + "-usb -device usb-tablet -boot c "
-          + "-display gtk,zoom-to-fit=on,window-close=on";
+          + "-usb -device usb-tablet -boot c -display gtk'";
 
         Intent intent = new Intent(this, DesktopActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP

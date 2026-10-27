@@ -68,10 +68,10 @@ private volatile boolean desktopIntroCancelled;
     protected void onCreate(Bundle b) {
         super.onCreate(b);
 
-        root = Cfg.rootDir(this); instance = this;
+        root = Cfg.rootDir(this); instance = this; prepareWine(getIntent());
         pendingX11Command = getIntent() == null ? null : getIntent().getStringExtra("x11_command");
         writeAutorun(getIntent());
-        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 25", android.widget.Toast.LENGTH_SHORT).show();
+        askStorage(); barH.postDelayed(barTick, 1500); android.widget.Toast.makeText(this, "GassNative build 27", android.widget.Toast.LENGTH_SHORT).show();
         nativeDir = getApplicationInfo().nativeLibraryDir;
         runDir = new File(getFilesDir(), "run");
         runDir.mkdirs(); new File(getCacheDir(),"dnc").mkdirs(); new File(getCacheDir(),"proot").mkdirs();
@@ -240,6 +240,26 @@ private volatile boolean desktopIntroCancelled;
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER_HORIZONTAL);
+        // GASS_BOOT_LOGO_V1: branded Debian desktop startup
+        android.widget.ImageView bootLogo = new android.widget.ImageView(this);
+        bootLogo.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        bootLogo.setAdjustViewBounds(true);
+        try (java.io.InputStream logoStream =
+                 getAssets().open("gassnative-square.png")) {
+            android.graphics.Bitmap logoBitmap =
+                android.graphics.BitmapFactory.decodeStream(logoStream);
+            if (logoBitmap != null) {
+                bootLogo.setImageBitmap(logoBitmap);
+            }
+        } catch (Exception e) {
+            android.util.Log.w("GassNative", "Boot logo could not be loaded", e);
+        }
+        LinearLayout.LayoutParams logoLp =
+            new LinearLayout.LayoutParams(dp(112), dp(112));
+        logoLp.gravity = Gravity.CENTER_HORIZONTAL;
+        logoLp.bottomMargin = dp(14);
+        box.addView(bootLogo, 0, logoLp);
+
         TextView ttl = new TextView(this);
         ttl.setText("GassNative");
         ttl.setTextColor(Color.WHITE);
@@ -259,7 +279,7 @@ private volatile boolean desktopIntroCancelled;
         blp.gravity = Gravity.CENTER_HORIZONTAL;
         box.addView(splashBar, blp);
         splashMsg = new TextView(this);
-        splashMsg.setText("Starting desktop...");
+        splashMsg.setText("Booting Debian Desktop...");
         splashMsg.setTextColor(Color.rgb(150, 160, 175));
         splashMsg.setTextSize(13);
         splashMsg.setGravity(Gravity.CENTER);
@@ -684,10 +704,29 @@ rootRef = rootView; setContentView(rootView);
         }
     }
 
-    private static final String GASS_START = "#!/bin/bash\necho \"GASS-STATUS Preparing desktop\"\nmkdir -p /etc/sudoers.d; echo 'user ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/user; chmod 440 /etc/sudoers.d/user\nif [ ! -s /root/gass.xkb ]; then\n  echo \"GASS-STATUS Creating keyboard layout\"\n  command -v xkbcomp >/dev/null 2>&1 || { apt-get update >/dev/null 2>&1; apt-get install -y x11-xkb-utils >/dev/null 2>&1; }\n  echo 'xkb_keymap { xkb_keycodes { include \"evdev+aliases(qwerty)\" }; xkb_types { include \"complete\" }; xkb_compat { include \"complete\" }; xkb_symbols { include \"pc+us+inet(evdev)\" }; };' | xkbcomp -w 0 -xkb - /root/gass.xkb 2>/dev/null\nfi\n[ -s /root/gass.xkb ] && echo \"GASS-KEYMAP /root/gass.xkb\"\necho 'Xft.dpi: 192' > /root/.Xresources\ncp -f /root/.Xresources /home/user/.Xresources 2>/dev/null\nmkdir -p /usr/lib/firefox-esr/defaults/pref /home/user/.config/vlc\ncat > /usr/lib/firefox-esr/defaults/pref/gass.js <<'E'\npref(\"security.sandbox.content.level\", 0);\npref(\"media.hardware-video-decoding.enabled\", false);\npref(\"media.ffmpeg.vaapi.enabled\", false);\npref(\"layers.acceleration.disabled\", true);\npref(\"gfx.webrender.software\", true);\nE\n[ -e /home/user/.config/vlc/vlcrc ] || printf '[avcodec]\\navcodec-hw=none\\n[core]\\nvout=x11\\n' > /home/user/.config/vlc/vlcrc\ncat > /usr/local/bin/gpu-run <<'E'\n#!/bin/sh\n${GPU_CMD:-/usr/local/bin/gpu} \"$@\" 2>&1 | tee /home/user/gpu-last.log\necho\necho \"=== finished - log saved in ~/gpu-last.log ===\"\nE\ncat > /usr/local/bin/gpu-gl <<'E'\n#!/bin/sh\nfor v in DISPLAY LIBGL_ALWAYS_SOFTWARE LIBGL_KOPPER_DISABLE GALLIUM_DRIVER MESA_LOADER_DRIVER_OVERRIDE EGL_PLATFORM TURNIP_KMD FD_FORCE_KGSL XWAYLAND_FORCE_KGSL_SURFACELESS; do unset $v; done\nexport WAYLAND_DISPLAY=/run/droidnative/wayland-0 XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl GALLIUM_DRIVER=freedreno FD_FORCE_KGSL=1\nexport GDK_BACKEND=wayland QT_QPA_PLATFORM=wayland SDL_VIDEODRIVER=wayland\nexec \"$@\"\nE\nchmod +x /usr/local/bin/gpu-run /usr/local/bin/gpu-gl\nD=/home/user/.local/share/applications; mkdir -p $D\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU glmark2\\nExec=xfce4-terminal --hold -x /usr/local/bin/gpu-run glmark2-wayland\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-glmark2.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU glmark2 (freedreno GL)\\nExec=xfce4-terminal --hold -x env GPU_CMD=/usr/local/bin/gpu-gl /usr/local/bin/gpu-run glmark2-wayland\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-glmark2-gl.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU Terminal (foot)\\nExec=/usr/local/bin/gpu foot\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-terminal.desktop\nchown -R user:user /home/user/.local /home/user/.config 2>/dev/null\ncat > /usr/local/bin/firefox-safe <<'E'\n#!/bin/sh\nunset WAYLAND_DISPLAY\nexport DISPLAY=:1 GDK_BACKEND=x11 MOZ_ENABLE_WAYLAND=0 MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_ACCELERATED=0 LIBGL_ALWAYS_SOFTWARE=1 MOZ_CRASHREPORTER_DISABLE=1\nexec firefox-esr --no-remote --new-instance \"$@\"\nE\ncat > /usr/local/bin/vlc-safe <<'E'\n#!/bin/sh\nunset WAYLAND_DISPLAY\nexport DISPLAY=:1\nA=dummy; [ -n \"$PULSE_SERVER\" ] && A=pulse\nexec vlc --vout=x11 --aout=$A --avcodec-hw=none \"$@\"\nE\nchmod +x /usr/local/bin/firefox-safe /usr/local/bin/vlc-safe\nD=/home/user/.local/share/applications; mkdir -p $D\nprintf '[Desktop Entry]\\nType=Application\\nName=Firefox (safe)\\nExec=/usr/local/bin/firefox-safe\\nTerminal=false\\nCategories=Network;\\n' > $D/firefox-safe.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=VLC (safe)\\nExec=/usr/local/bin/vlc-safe\\nTerminal=false\\nCategories=AudioVideo;\\n' > $D/vlc-safe.desktop\nchown -R user:user /home/user/.local 2>/dev/null\n/usr/local/bin/gass-xserver\nexport DISPLAY=:1\nxhost +local: >/dev/null 2>&1\nunset WAYLAND_DISPLAY\nexec su user -c /usr/local/bin/gass-session\n";
+    private static final String GASS_START = "#!/bin/bash\necho \"GASS-STATUS Preparing desktop\"\npkill -9 -x Xwayland 2>/dev/null; pkill -9 -f wineserver 2>/dev/null\nmkdir -p /etc/sudoers.d; echo 'user ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/user; chmod 440 /etc/sudoers.d/user\nif [ ! -s /root/gass.xkb ]; then\n  echo \"GASS-STATUS Creating keyboard layout\"\n  command -v xkbcomp >/dev/null 2>&1 || { apt-get update >/dev/null 2>&1; apt-get install -y x11-xkb-utils >/dev/null 2>&1; }\n  echo 'xkb_keymap { xkb_keycodes { include \"evdev+aliases(qwerty)\" }; xkb_types { include \"complete\" }; xkb_compat { include \"complete\" }; xkb_symbols { include \"pc+us+inet(evdev)\" }; };' | xkbcomp -w 0 -xkb - /root/gass.xkb 2>/dev/null\nfi\n[ -s /root/gass.xkb ] && echo \"GASS-KEYMAP /root/gass.xkb\"\necho 'Xft.dpi: 192' > /root/.Xresources\ncp -f /root/.Xresources /home/user/.Xresources 2>/dev/null\nmkdir -p /usr/lib/firefox-esr/defaults/pref /home/user/.config/vlc\ncat > /usr/lib/firefox-esr/defaults/pref/gass.js <<'E'\npref(\"security.sandbox.content.level\", 0);\npref(\"media.hardware-video-decoding.enabled\", false);\npref(\"media.ffmpeg.vaapi.enabled\", false);\npref(\"layers.acceleration.disabled\", true);\npref(\"gfx.webrender.software\", true);\nE\n[ -e /home/user/.config/vlc/vlcrc ] || printf '[avcodec]\\navcodec-hw=none\\n[core]\\nvout=x11\\n' > /home/user/.config/vlc/vlcrc\ncat > /usr/local/bin/gpu-run <<'E'\n#!/bin/sh\n${GPU_CMD:-/usr/local/bin/gpu} \"$@\" 2>&1 | tee /home/user/gpu-last.log\necho\necho \"=== finished - log saved in ~/gpu-last.log ===\"\nE\ncat > /usr/local/bin/gpu-gl <<'E'\n#!/bin/sh\nfor v in DISPLAY LIBGL_ALWAYS_SOFTWARE LIBGL_KOPPER_DISABLE GALLIUM_DRIVER MESA_LOADER_DRIVER_OVERRIDE EGL_PLATFORM TURNIP_KMD FD_FORCE_KGSL XWAYLAND_FORCE_KGSL_SURFACELESS; do unset $v; done\nexport WAYLAND_DISPLAY=/run/droidnative/wayland-0 XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl GALLIUM_DRIVER=freedreno FD_FORCE_KGSL=1\nexport GDK_BACKEND=wayland QT_QPA_PLATFORM=wayland SDL_VIDEODRIVER=wayland\nexec \"$@\"\nE\nchmod +x /usr/local/bin/gpu-run /usr/local/bin/gpu-gl\nD=/home/user/.local/share/applications; mkdir -p $D\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU glmark2\\nExec=xfce4-terminal --hold -x /usr/local/bin/gpu-run glmark2-wayland\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-glmark2.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU glmark2 (freedreno GL)\\nExec=xfce4-terminal --hold -x env GPU_CMD=/usr/local/bin/gpu-gl /usr/local/bin/gpu-run glmark2-wayland\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-glmark2-gl.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=GPU Terminal (foot)\\nExec=/usr/local/bin/gpu foot\\nTerminal=false\\nCategories=System;\\n' > $D/gpu-terminal.desktop\nchown -R user:user /home/user/.local /home/user/.config 2>/dev/null\ncat > /usr/local/bin/firefox-safe <<'E'\n#!/bin/sh\nunset WAYLAND_DISPLAY\nexport DISPLAY=:1 GDK_BACKEND=x11 MOZ_ENABLE_WAYLAND=0 MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_GMP_SANDBOX=1 MOZ_DISABLE_RDD_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 MOZ_ACCELERATED=0 LIBGL_ALWAYS_SOFTWARE=1 MOZ_CRASHREPORTER_DISABLE=1\nexec firefox-esr --no-remote --new-instance \"$@\"\nE\ncat > /usr/local/bin/vlc-safe <<'E'\n#!/bin/sh\nunset WAYLAND_DISPLAY\nexport DISPLAY=:1\nA=dummy; [ -n \"$PULSE_SERVER\" ] && A=pulse\nexec vlc --vout=x11 --aout=$A --avcodec-hw=none \"$@\"\nE\nchmod +x /usr/local/bin/firefox-safe /usr/local/bin/vlc-safe\nD=/home/user/.local/share/applications; mkdir -p $D\nprintf '[Desktop Entry]\\nType=Application\\nName=Firefox (safe)\\nExec=/usr/local/bin/firefox-safe\\nTerminal=false\\nCategories=Network;\\n' > $D/firefox-safe.desktop\nprintf '[Desktop Entry]\\nType=Application\\nName=VLC (safe)\\nExec=/usr/local/bin/vlc-safe\\nTerminal=false\\nCategories=AudioVideo;\\n' > $D/vlc-safe.desktop\nchown -R user:user /home/user/.local 2>/dev/null\nif [ \"$1\" = wine ]; then\n  if [ \"$(cat /home/user/.gass-wine-mode 2>/dev/null)\" != wayland ]; then\n    /usr/local/bin/gass-xserver\n    export DISPLAY=:1\n    xhost +local: >/dev/null 2>&1\n  fi\n  unset WAYLAND_DISPLAY\n  exec su user -c /usr/local/bin/gass-wine\nfi\n/usr/local/bin/gass-xserver\nexport DISPLAY=:1\nxhost +local: >/dev/null 2>&1\nunset WAYLAND_DISPLAY\nexec su user -c /usr/local/bin/gass-session\n";
     private static final String GASS_XSERVER = "#!/bin/bash\nexport XDG_RUNTIME_DIR=/run/droidnative WAYLAND_DISPLAY=wayland-0\nrm -f /tmp/.X1-lock /tmp/.X11-unix/X1\nLOG=/tmp/gass-xserver.log\n: > $LOG\nwait_x() { for i in $(seq 1 12); do [ -S /tmp/.X11-unix/X1 ] && return 0; sleep 0.5; done; return 1; }\nXM=shm\nif [ ! -e /home/user/.gass-safe ] && [ -c /dev/kgsl-3d0 ]; then\n  echo \"GASS-STATUS Starting X server (GPU)\"\n  env MESA_LOADER_DRIVER_OVERRIDE=kgsl TURNIP_KMD=kgsl FD_FORCE_KGSL=1 GALLIUM_DRIVER=freedreno XWAYLAND_FORCE_KGSL_SURFACELESS=1 EGL_PLATFORM=surfaceless TU_DEBUG=noconform Xwayland :1 -fullscreen -noreset -glamor gl >> $LOG 2>&1 &\n  XP=$!\n  if wait_x; then\n    sleep 1\n    if kill -0 $XP 2>/dev/null && command -v xdpyinfo >/dev/null 2>&1 && DISPLAY=:1 timeout 5 xdpyinfo -queryExtensions 2>/dev/null | grep -qi dri3; then XM=glamor; fi\n  fi\n  if [ \"$XM\" != glamor ]; then\n    kill $XP 2>/dev/null; sleep 1; kill -9 $XP 2>/dev/null\n    rm -f /tmp/.X1-lock /tmp/.X11-unix/X1\n  fi\nfi\nif [ \"$XM\" != glamor ]; then\n  echo \"GASS-STATUS Starting X server (software)\"\n  Xwayland :1 -shm -fullscreen -noreset >> $LOG 2>&1 &\n  wait_x\nfi\necho $XM > /tmp/gass-xmode\n";
 
     private static final String GASS_LABWC = "#!/bin/bash\nLOG=$HOME/labwc-test.log\nfor c in labwc foot glmark2-wayland; do\n  command -v $c >/dev/null 2>&1 || { echo \"Missing $c. Run: sudo apt install -y labwc foot glmark2-wayland\"; exit 1; }\ndone\nPARENT=/run/droidnative/wayland-0\n[ -S $PARENT ] || { echo \"Compositor socket not found: $PARENT\"; exit 1; }\nexport XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\ncat > /tmp/labwc-test.sh <<'E'\n#!/bin/bash\nunset LIBGL_ALWAYS_SOFTWARE GALLIUM_DRIVER MESA_LOADER_DRIVER_OVERRIDE LIBGL_KOPPER_DISABLE DISPLAY\necho \"== nested labwc test ==\"\necho \"WAYLAND_DISPLAY=$WAYLAND_DISPLAY\"\necho\necho \"-- software baseline\"\nLIBGL_ALWAYS_SOFTWARE=1 glmark2-wayland --benchmark build:duration=1 2>&1 | grep -i -E \"renderer|score|error|fail\" | head -5\necho\necho \"-- zink on Turnip (GPU)\"\nVK_ICD_FILENAMES=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink TU_DEBUG=noconform glmark2-wayland --benchmark build:duration=1 2>&1 | grep -i -E \"renderer|score|error|fail\" | head -6\necho\necho \"Finished. Close this window when you are done.\"\nsleep 3600\nE\nchmod +x /tmp/labwc-test.sh\nunset DISPLAY\nexport WAYLAND_DISPLAY=$PARENT\nexport WLR_BACKENDS=wayland WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 XDG_SESSION_TYPE=wayland\necho \"Starting nested labwc, log in $LOG\"\nexec labwc -s \"foot -e /tmp/labwc-test.sh\" > $LOG 2>&1\n";
+
+    private static final String GASS_WINE = "#!/bin/bash\nexport XDG_RUNTIME_DIR=/tmp/runtime-user\nmkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR\nexport WINEPREFIX=/home/user/.gass-wine WINEDEBUG=fixme-all,err+all\ncommand -v wine >/dev/null 2>&1 || { echo \"GASS-STATUS Wine is not installed\"; sleep 4; echo GASS-EXIT; exit 1; }\nif command -v pulseaudio >/dev/null 2>&1; then\n  unset PULSE_SERVER\n  cat > $HOME/.gass.pa <<'E'\nload-module module-native-protocol-unix\nload-module module-pipe-sink file=/run/droidnative/audio.pcm sink_name=android format=s16le rate=44100 channels=2\nset-default-sink android\nE\n  pulseaudio --kill 2>/dev/null\n  pulseaudio -n -F $HOME/.gass.pa --daemonize=yes --exit-idle-time=-1 --log-target=file:/tmp/pa.log\nfi\nR=$(cat $HOME/.gass-screen 2>/dev/null); [ -z \"$R\" ] && R=1280x720\nMODE=$(cat $HOME/.gass-wine-mode 2>/dev/null || echo x11)\nif [ \"$MODE\" = wayland ]; then\n  unset DISPLAY\n  export WAYLAND_DISPLAY=/run/droidnative/wayland-0\n  export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink TU_DEBUG=noconform\n  DRV=wayland,x11\nelse\n  export DISPLAY=:1\n  unset WAYLAND_DISPLAY\n  DRV=x11\nfi\nmkdir -p $WINEPREFIX\n/usr/local/bin/gass-dxvk\nif [ \"$(cat $WINEPREFIX/.gass-driver 2>/dev/null)\" != \"$DRV\" ]; then\n  echo \"GASS-STATUS Preparing Windows environment (first run can take a few minutes)\"\n  wine reg add 'HKCU\\Software\\Wine\\Drivers' /v Graphics /d $DRV /f >/dev/null 2>&1\n  echo \"$DRV\" > $WINEPREFIX/.gass-driver\nfi\nD=$WINEPREFIX/drive_c/users/$(id -un)/Desktop\nmkdir -p \"$D\" 2>/dev/null\n[ -e \"$D/Download\" ] || ln -s /sdcard/Download \"$D/Download\" 2>/dev/null\n[ -d /sdcard/Download/Games ] && { [ -e \"$D/Games\" ] || ln -s /sdcard/Download/Games \"$D/Games\" 2>/dev/null; }\n[ -e \"$D/Phone storage\" ] || ln -s /sdcard \"$D/Phone storage\" 2>/dev/null\nif [ ! -e $WINEPREFIX/.gass-dpi ]; then\n  wine reg add 'HKCU\\Control Panel\\Desktop' /v LogPixels /t REG_DWORD /d 192 /f >/dev/null 2>&1\n  touch $WINEPREFIX/.gass-dpi\nfi\n( for i in $(seq 1 150); do\n    if pgrep -f explorer.exe >/dev/null 2>&1; then sleep 2; echo GASS-READY; break; fi\n    sleep 1\n  done ) &\nRUN=$(cat $HOME/.gass-wine-run 2>/dev/null)\nrm -f $HOME/.gass-wine-run\necho \"GASS-STATUS Starting Windows desktop ($MODE)\"\nif [ -n \"$RUN\" ]; then\n  W=$(winepath -w \"$RUN\" 2>/dev/null); [ -z \"$W\" ] && W=\"$RUN\"\n  cd \"$(dirname \"$RUN\")\"\n  wine explorer /desktop=GassGame,$R \"$W\" 2>&1 | tee $HOME/wine-session.log\nelse\n  wine explorer C:\\\\ 2>&1 | tee $HOME/wine-session.log\nfi\nwineserver -w 2>/dev/null\necho GASS-EXIT\n";
+
+    private static final String GASS_DXVK =
+        "#!/bin/sh\n" +
+        "set -eu\n" +
+        "WINEPREFIX=/home/user/.gass-wine\n" +
+        "DXVK=/opt/gassnative/dxvk-v2.7.1/arm64ec\n" +
+        "if [ -s $DXVK/dxgi.dll ]; then\n" +
+        "  mkdir -p $WINEPREFIX/drive_c/windows/system32\n" +
+        "  for dll in d3d9 d3d10core d3d11 dxgi; do\n" +
+        "    [ -s $DXVK/$dll.dll ] || continue\n" +
+        "    cp -f $DXVK/$dll.dll $WINEPREFIX/drive_c/windows/system32/$dll.dll\n" +
+        "    wine reg add 'HKCU\\Software\\Wine\\DllOverrides' /v $dll /d native,builtin /f >/dev/null 2>&1 || true\n" +
+        "  done\n" +
+        "  echo GASS-DXVK-ARM64EC-installed\n" +
+        "else\n" +
+        "  echo GASS-DXVK-files-missing\n" +
+        "fi\n";
 
     private void writeScript(String rel, String body) {
         try {
@@ -705,6 +744,8 @@ rootRef = rootView; setContentView(rootView);
     private void installStartScripts() {
         writeScript("usr/local/bin/gass-start", GASS_START);
         writeScript("usr/local/bin/gass-xserver", GASS_XSERVER);
+        writeScript("usr/local/bin/gass-wine", GASS_WINE);
+        writeScript("usr/local/bin/gass-dxvk", GASS_DXVK);
         writeScript("usr/local/bin/gass-labwc", GASS_LABWC);
     }
 
@@ -1015,6 +1056,51 @@ rootRef = rootView; setContentView(rootView);
         return sb.toString();
     }
 
+    private boolean wineMode;
+
+    private static void writeText(File f, String t) throws java.io.IOException {
+        java.io.FileWriter w = new java.io.FileWriter(f);
+        w.write(t);
+        w.close();
+    }
+
+    private void prepareWine(android.content.Intent in) {
+        wineMode = in != null && "wine".equals(in.getStringExtra("mode"));
+        try {
+            File home = new File(root, "home/user");
+            home.mkdirs();
+            new File(home, ".gass-safe").createNewFile();
+            android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+            writeText(new File(home, ".gass-screen"), dm.widthPixels + "x" + dm.heightPixels);
+            if (wineMode) {
+                writeText(new File(home, ".gass-wine-mode"), "wayland".equals(in.getStringExtra("wmode")) ? "wayland" : "x11");
+                String exe = in.getStringExtra("exe");
+                File run = new File(home, ".gass-wine-run");
+                if (exe != null && exe.length() > 0) writeText(run, exe); else run.delete();
+            }
+        } catch (Throwable t) {
+            android.util.Log.e("GassNativeDesktop", "prepareWine", t);
+        }
+    }
+
+    private String bootCmd() {
+        return wineMode ? "/usr/local/bin/gass-start wine" : XFCE_CMD;
+    }
+
+    static void launch(final android.content.Context c, String mode, String exe, String wmode) {
+        final android.content.Intent i = new android.content.Intent(c, DesktopActivity.class);
+        i.putExtra("mode", mode);
+        if (exe != null) i.putExtra("exe", exe);
+        if (wmode != null) i.putExtra("wmode", wmode);
+        DesktopActivity cur = instance;
+        if (cur != null && ("wine".equals(mode) || cur.wineMode)) {
+            cur.powerOff();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> c.startActivity(i), 1500);
+        } else {
+            c.startActivity(i);
+        }
+    }
+
     private void startCompositor() {
         if (starting || (compositor != null && compositor.isRunning())) {
             say("Compositor is already running or starting.");
@@ -1103,7 +1189,7 @@ rootRef = rootView; setContentView(rootView);
                     starting = false;
                     if (ok) {
                         compositor = c;
-                        say("Compositor running."); launchGuest(XFCE_CMD);
+                        say("Compositor running."); launchGuest(bootCmd());
                         launchPendingX11();
                         attachSurface();
                     } else {
@@ -1411,6 +1497,8 @@ rootRef = rootView; setContentView(rootView);
                                 android.widget.Toast.makeText(this, "Copied to Android clipboard", android.widget.Toast.LENGTH_SHORT).show();
                             });
                         } catch (Throwable ignored) {}
+                    } else if (line.startsWith("GASS-EXIT")) {
+                        runOnUiThread(() -> powerOff());
                     } else if (line.contains("GASS-READY")) {
                         runOnUiThread(() -> hideSplash());
                     }
