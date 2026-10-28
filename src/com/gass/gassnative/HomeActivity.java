@@ -42,6 +42,7 @@ public class HomeActivity extends Activity {
     private TextView tickerText;
     private ValueAnimator tickerAnimator;
     private float tickerSegmentWidth = 0f;
+    private String tickerSegmentText = "";
     private final Handler tickerHandler = new Handler(Looper.getMainLooper());
     private volatile boolean tickerActive = false;
     private volatile boolean tickerFetchRunning = false;
@@ -172,18 +173,34 @@ public class HomeActivity extends Activity {
 
         tickerViewport.addOnLayoutChangeListener(
             (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-                if (right > left && tickerActive) restartTickerAnimation();
+                if (right > left && (right - left) != (oldRight - oldLeft)
+                        && tickerActive) {
+                    restartTickerAnimation();
+                }
             }
         );
     }
 
+    // GASS_TICKER_LAYOUT_FIX_V2
     private void setTickerMessage(String message) {
         if (tickerText == null || message == null
                 || message.trim().isEmpty()) return;
 
-        String segment = "   •   " + message.trim() + "   •   ";
-        tickerText.setText(segment + segment);
-        tickerSegmentWidth = tickerText.getPaint().measureText(segment);
+        String clean = message.trim().replaceAll("\\s+", " ");
+        tickerSegmentText = "     \u2022     " + clean + "     \u2022     ";
+
+        if (tickerAnimator != null) {
+            tickerAnimator.cancel();
+            tickerAnimator = null;
+        }
+
+        tickerText.setSingleLine(true);
+        tickerText.setHorizontallyScrolling(true);
+        tickerText.setEllipsize(null);
+        tickerText.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        tickerText.setTranslationX(0f);
+        tickerText.setText(tickerSegmentText + tickerSegmentText);
+        tickerSegmentWidth = tickerText.getPaint().measureText(tickerSegmentText);
 
         if (tickerViewport != null) {
             tickerViewport.post(this::restartTickerAnimation);
@@ -198,33 +215,60 @@ public class HomeActivity extends Activity {
             tickerAnimator = null;
         }
 
-        int viewportWidth = tickerViewport.getWidth();
-        if (viewportWidth <= 0 || tickerSegmentWidth <= 0f) return;
+        if (tickerViewport.getWidth() <= 0 || tickerSegmentText.isEmpty()) return;
 
-        float segmentWidth = tickerSegmentWidth;
-        int textWidth = (int) Math.ceil(
-            tickerText.getPaint().measureText(
-                tickerText.getText().toString()
-            )
-        ) + dp(4);
+        final String repeated = tickerSegmentText + tickerSegmentText;
+        tickerText.setText(repeated);
 
-        tickerText.setWidth(textWidth);
-        tickerText.setTranslationX(0f);
+        // Measure after TextView has its final text and paint configuration.
+        tickerText.post(() -> {
+            if (!tickerActive || tickerText == null || tickerViewport == null
+                    || tickerViewport.getWidth() <= 0
+                    || tickerSegmentText.isEmpty()) return;
 
-        // Two identical segments allow a seamless repeat after one segment.
-        tickerAnimator = ValueAnimator.ofFloat(0f, -segmentWidth);
-        tickerAnimator.setDuration(Math.max(
-            1L, (long) (segmentWidth * 1000f / Math.max(1, dp(36)))
-        ));
-        tickerAnimator.setInterpolator(new LinearInterpolator());
-        tickerAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        tickerAnimator.setRepeatMode(ValueAnimator.RESTART);
-        tickerAnimator.addUpdateListener(a -> {
-            if (tickerText != null) {
-                tickerText.setTranslationX((Float) a.getAnimatedValue());
-            }
+            final float segmentWidth =
+                tickerText.getPaint().measureText(tickerSegmentText);
+            if (segmentWidth <= 1f) return;
+
+            tickerSegmentWidth = segmentWidth;
+            final int textWidth =
+                (int) Math.ceil(tickerText.getPaint().measureText(repeated)) + dp(4);
+
+            tickerText.setLayoutParams(new FrameLayout.LayoutParams(
+                Math.max(1, textWidth), -1, Gravity.START | Gravity.CENTER_VERTICAL
+            ));
+            tickerText.setTranslationX(0f);
+            tickerText.requestLayout();
+
+            // Start only after the wide TextView has been laid out.
+            tickerText.post(() -> {
+                if (!tickerActive || tickerText == null || tickerViewport == null
+                        || tickerViewport.getWidth() <= 0) return;
+
+                if (tickerAnimator != null) {
+                    tickerAnimator.cancel();
+                    tickerAnimator = null;
+                }
+
+                ValueAnimator animator = ValueAnimator.ofFloat(0f, -segmentWidth);
+                long duration = Math.max(
+                    1000L,
+                    (long) (segmentWidth * 1000f / Math.max(1, dp(36)))
+                );
+                animator.setDuration(duration);
+                animator.setInterpolator(new LinearInterpolator());
+                animator.setRepeatCount(ValueAnimator.INFINITE);
+                animator.setRepeatMode(ValueAnimator.RESTART);
+                animator.addUpdateListener(a -> {
+                    if (tickerActive && tickerText != null) {
+                        tickerText.setTranslationX((Float) a.getAnimatedValue());
+                    }
+                });
+
+                tickerAnimator = animator;
+                animator.start();
+            });
         });
-        tickerAnimator.start();
     }
 
     private void startNewsTicker() {
@@ -982,7 +1026,124 @@ public class HomeActivity extends Activity {
             .show();
     }
 
+    private static final String[][] PNG_MAP = {
+        {"m_terminal", "terminal", "term"},
+        {"m_desktop", "desktop", "debiandesktop"},
+        {"m_settings", "setting", "settings", "settingaudit"},
+        {"m_wine", "winedesktop", "wine"},
+        {"m_windowsvm", "windowsvm", "windowvm", "winvm", "vm", "windows"},
+        {"m_tv", "tvstreaming", "tv", "television", "streaming"},
+        {"m_radio", "radio"},
+        {"m_music", "musicplayer", "music"},
+        {"m_about", "aboutme", "about"},
+        {"m_talkie", "talkiewalkie", "talkie", "walkie"},
+        {"m_gps", "gpsmaps", "gps", "maps"},
+        {"m_soon", "comingsoon", "soon"},
+        {"m_power", "poweroff", "power"},
+        {"m_language", "language", "lang"},
+        {"m_support", "support"},
+        {"gass_ai", "ai", "gassai", "gass"} };
+
+    private final StringBuilder tileDbg = new StringBuilder();
+
+    private void tileLog(String line) {
+        tileDbg.append(line).append('\n');
+        try (java.io.FileWriter w = new java.io.FileWriter("/sdcard/Download/gass-tiles.log", false)) {
+            w.write(tileDbg.toString());
+        } catch (Throwable ignored) {}
+    }
+
+    private static String nrm(String s) {
+        return s == null ? "" : s.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    private String pngName(String code, String label) {
+        String c = nrm(code), l = nrm(label);
+        for (String[] e : PNG_MAP) {
+            for (int i = 1; i < e.length; i++) {
+                if (e[i].equals(c) || e[i].equals(l)) return e[0] + ".png";
+            }
+        }
+        return null;
+    }
+
+    private View[] holderOf(android.view.ViewGroup g) {
+        int n = g.getChildCount();
+        for (int i = 0; i < n; i++) {
+            if (g.getChildAt(i) instanceof android.widget.TextView && i > 0) return new View[]{g, g.getChildAt(i - 1)};
+        }
+        for (int i = 0; i < n; i++) {
+            View c = g.getChildAt(i);
+            if (c instanceof android.view.ViewGroup) {
+                View[] r = holderOf((android.view.ViewGroup) c);
+                if (r != null) return r;
+            }
+        }
+        return null;
+    }
+
+    private View decorateTile(View t, String code, String label) {
+        try {
+            String f = pngName(code, label);
+            if (f == null) { tileLog("NO MATCH   code=" + code + "  label=" + label); return t; }
+            android.graphics.Bitmap bm = loadIcon(f);
+            if (bm == null) { tileLog("NO FILE    " + f + "  (code=" + code + ")"); return t; }
+            if (!(t instanceof android.view.ViewGroup)) { tileLog("NOT A GROUP code=" + code); return t; }
+            View[] hit = holderOf((android.view.ViewGroup) t);
+            if (hit == null) { tileLog("NO HOLDER  code=" + code + "  label=" + label); return t; }
+            android.view.ViewGroup parent = (android.view.ViewGroup) hit[0];
+            View holder = hit[1];
+            android.widget.ImageView iv = new android.widget.ImageView(this);
+            iv.setImageBitmap(bm);
+            iv.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            iv.setAdjustViewBounds(false);
+            if (holder instanceof android.view.ViewGroup) {
+                android.view.ViewGroup h = (android.view.ViewGroup) holder;
+                h.removeAllViews();
+                h.setBackground(null);
+                if ("ai".equals(code)) {
+                    h.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                    h.setElevation(0);
+                }
+                h.setPadding(0, 0, 0, 0);
+                android.widget.FrameLayout frame =
+                    new android.widget.FrameLayout(this);
+                if ("ai".equals(code)) {
+                    frame.setBackgroundColor(
+                        android.graphics.Color.TRANSPARENT);
+                    frame.setElevation(0);
+                }
+
+                frame.addView(iv,
+                    new android.widget.FrameLayout.LayoutParams(
+                        dp("ai".equals(code) ? 64 : 48), dp("ai".equals(code) ? 64 : 48),
+                        android.view.Gravity.CENTER));
+
+                h.addView(frame,
+                    new android.view.ViewGroup.LayoutParams(-1, -1));
+            } else {
+                android.widget.FrameLayout nf = new android.widget.FrameLayout(this);
+                nf.addView(iv,
+                    new android.widget.FrameLayout.LayoutParams(
+                        dp("ai".equals(code) ? 64 : 48), dp("ai".equals(code) ? 64 : 48),
+                        android.view.Gravity.CENTER));
+                int idx = parent.indexOfChild(holder);
+                android.view.ViewGroup.LayoutParams lp = holder.getLayoutParams();
+                parent.removeViewAt(idx);
+                parent.addView(nf, idx, lp);
+            }
+            tileLog("OK         code=" + code + "  label=" + label + "  ->  " + f);
+        } catch (Throwable e) {
+            tileLog("ERROR      code=" + code + "  " + e);
+        }
+        return t;
+    }
+
     private View tile(String label, int c1, int c2, int glyph, final String code) {
+        return decorateTile(tileRaw(label, c1, c2, glyph, code), code, label);
+    }
+
+    private View tileRaw(String label, int c1, int c2, int glyph, final String code) {
         if (!"gass_orange".equals(Appearance.theme(this))) {
             c1 = Appearance.accent(this);
             c2 = Appearance.panel(this);
@@ -1388,6 +1549,75 @@ public class HomeActivity extends Activity {
         newsBtn.setText(action.length() > 0 ? action : "Explore GASS AI");
         newsBtn.setVisibility(newsUrl != null && newsUrl.length() > 0
             ? View.VISIBLE : View.GONE);
+    }
+
+    private String[] uiFiles;
+
+    private static String norm(String n) {
+        int dot = n.lastIndexOf('.');
+        if (dot > 0) n = n.substring(0, dot);
+        return n.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    private android.graphics.Bitmap loadIcon(String file) {
+        try {
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            try (java.io.InputStream in = getAssets().open("ui/" + file)) {
+                android.graphics.BitmapFactory.decodeStream(in, null, o);
+            }
+            int ss = 1;
+            while (o.outWidth / (ss * 2) >= 64 && o.outHeight / (ss * 2) >= 64) ss *= 2;
+            o = new android.graphics.BitmapFactory.Options();
+            o.inSampleSize = ss;
+            try (java.io.InputStream in = getAssets().open("ui/" + file)) {
+                return android.graphics.BitmapFactory.decodeStream(in, null, o);
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private android.graphics.Bitmap iconFor(String code) {
+        String[] al;
+        switch (code) {
+            case "term": al = new String[]{"terminal", "console"}; break;
+            case "desktop": al = new String[]{"desktop"}; break;
+            case "settings": al = new String[]{"setting", "audit"}; break;
+            case "games": al = new String[]{"game", "windows", "wine"}; break;
+            case "tv": al = new String[]{"television", "tv"}; break;
+            case "radio": al = new String[]{"radio"}; break;
+            case "music": al = new String[]{"music", "headphone"}; break;
+            case "about": al = new String[]{"about"}; break;
+            case "tips": al = new String[]{"tip", "useful"}; break;
+            case "ubuntu": al = new String[]{"ubuntu"}; break;
+            case "kali": al = new String[]{"kali"}; break;
+            case "power": al = new String[]{"power"}; break;
+            default: return null;
+        }
+        try {
+            if (uiFiles == null) uiFiles = getAssets().list("ui");
+        } catch (Exception e) {
+            uiFiles = new String[0];
+        }
+        if (uiFiles == null) return null;
+        String hit = null;
+        for (String a : al) {
+            for (String f : uiFiles) {
+                if (norm(f).equals(a)) { hit = f; break; }
+            }
+            if (hit != null) break;
+        }
+        if (hit == null) {
+            for (String a : al) {
+                if (a.length() < 3) continue;
+                for (String f : uiFiles) {
+                    if (norm(f).contains(a)) { hit = f; break; }
+                }
+                if (hit != null) break;
+            }
+        }
+        return hit == null ? null : loadIcon(hit);
     }
 
     private boolean debianReady() {

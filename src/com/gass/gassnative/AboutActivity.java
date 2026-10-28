@@ -178,15 +178,31 @@ public class AboutActivity extends Activity {
         info(dev, "Project", "Gass-OS");
         info(dev, "Application", "GassNative");
 
+        // GASS_DEVELOPER_PROFILE_V2
+        info(dev, "Professional focus",
+            "Embedded systems and software development");
+        info(dev, "Technical interests",
+            "Linux on Android, ARM64 systems, Debian, native applications, "
+          + "desktop integration, system tools and graphics acceleration");
+        info(dev, "Current project",
+            "GassNative — a Debian 13 ARM64 environment with an integrated "
+          + "XFCE4 desktop on Android, designed to work without root access");
+        info(dev, "Project vision",
+            "Growing Gass-OS into a flexible mobile computing platform "
+          + "for Linux tools, desktop applications and future operating-system projects");
+        info(dev, "Languages",
+            "Arabic • French • English • Italian");
+
+
         TextView github = text(
-            "GitHub  ↗  github.com/Gass-OS",
+            "GitHub  ↗  Gass-OS/GassNative-",
             15, BLUE
         );
         github.setPadding(0, dp(5), 0, dp(8));
 
         github.setOnClickListener(v -> {
             Intent i = new Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://github.com/Gass-OS"));
+                Uri.parse("https://github.com/Gass-OS/GassNative-"));
             startActivity(i);
         });
 
@@ -218,6 +234,15 @@ public class AboutActivity extends Activity {
         projectSite.setOnClickListener(v ->
             openExternal("https://github.com/Gass-OS"));
         dev.addView(projectSite);
+
+        TextView website = text(
+            "\\uD83D\\uDE80  GassNative project website  \\u2197",
+            15, BLUE
+        );
+        website.setPadding(0, dp(8), 0, dp(4));
+        website.setOnClickListener(v ->
+            openExternal("https://gass-os.github.io/GassNative-/"));
+        dev.addView(website);
 
         section("Open-source credits");
 

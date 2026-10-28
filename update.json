@@ -1,15 +1,15 @@
 {
-  "versionCode": 14,
-  "versionName": "0.8",
+  "versionCode": 15,
+  "versionName": "0.9",
   "downloadUrl": "https://github.com/Gass-OS/GassNative-/releases/latest/download/gassnative.apk",
-  "releaseNotes": "GassNative v0.8 Build 14: refreshed interface, improved clock and calendar, live technology news, AI and desktop improvements, and additional appearance and communication features.",
+  "releaseNotes": "GassNative v0.9 Build 15: refined animated GASS NEWS ticker, updated home-screen icons and tiles, and an expanded About page.",
   "news": [
     {
-      "id": "gassnative-v08-build14",
-      "title": "GassNative v0.8 is here!",
-      "message": "Explore the refreshed interface, live technology news, AI improvements, and updated desktop features.",
+      "id": "gassnative-v09-build15",
+      "title": "GassNative v0.9 is here!",
+      "message": "Discover the updated home screen, refined scrolling news ticker, and expanded developer and project information.",
       "buttonText": "Read release notes",
-      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.8-build14"
+      "url": "https://github.com/Gass-OS/GassNative-/releases/tag/gassnative-v0.9-build15"
     }
   ]
 }
